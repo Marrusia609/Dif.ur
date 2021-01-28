@@ -2,26 +2,29 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "qcustomplot.h"
+#include <QtWidgets>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
 
 extern double t;
+// Initial values & variables
 extern double Dig;
 extern double ti1;
 extern double Dbol;
 extern double Vbas;
 extern double mt;
-extern double kp1;
-extern double g0;
-extern double gt0;
-extern double Ip0;
+extern double kp1;  // mg/kg/min
+extern double g0;   // plasma glucose, mg/kg START gp?
+extern double gt0;  // tissue glucose, mg/kg  START
+extern double Ip0;  // portal vein insulin, pmol/kg START
 extern double b;
 extern double c;
 extern double Fcns;
 extern double m2;
-extern double Vmxx;
+extern double Vmxx; // mg/kg/min per pmol/l   insulin sens
 extern double del;
 extern double tm1; // tm
 extern double Ti1;
