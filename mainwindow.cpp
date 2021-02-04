@@ -1,4 +1,4 @@
-#include "mainwindow.h"
+ #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <iostream>
 #include <vector>
@@ -8,41 +8,43 @@
 
 
 using namespace std;
-                            // начальные значения ???
-double t = 0.0;         // время сейчас?
+
+                        // + значит что значение перенесено с новых файлов
+double t = 0.0;         // время начинается с нуля
 
     /* meal data */
-double tm1 = 30; // tm  // время приёма пищи
-double Tm = 15;         // длительность приёма пищи
+double tm1 = 60; // tm  // время приёма пищи  +
+double Tm = 20;         // длительность приёма пищи +
 double Dig = 1e-05;     // масса углеводов начальная
     /* bolus */
 double Ti1 = 10;        // наверное?
 double Ti2 = 10;        // что из этого длительность ввода а что время ввода
-double ti2 = 20;
-double ti1 = 20;
-double Dbol = 1.8;      // доза болюса начальная
+double ti2 = 60;
+double ti1 = 30;
+double Ti3 = 10;
+double ti3 = 10;
+double del = 0.4;       // result of bolus calculation +
+double Dbol1 = 1.8;      // доза болюса начальная
+double Dbol2 = 1.8;      // доза болюса начальная
+double Dbol3 = 1.8;      // доза болюса начальная
+
     /* bazal ins */
-double Vbas = 0.15;     // доза базального инсулина
+double Vbas = 1.2238;   // доза базального инсулина  +
 
-double b = 0.72;        // percentage, kgut=(kmin+kmax)/2 right
-double c = 0.115;       //percentage, kgut=(kmin+kmax)/2 left обеспечивает 2 волны
 
-double Vg = 1.8;        // plasma per BW, dl/kg
-double Vmxx =0.047;     // mg/kg/min per pmol/l   insulin sens
-double kp1 = 3.27;      // mg/kg/min
+double Vg = 1.8;        // plasma per BW, dl/kg +
+double Vmxx =0.087;     // mg/kg/min per pmol/l   insulin sens +
+double kp1 = 2.76;      // mg/kg/min +
 
-    /* Glucose Utilization */
-double Fcns = 0.8;      // mg/kg/min
 
-double m2 = 0.001;      // неивестная переменная c неизвестным значением
-double del = 0.001;     // неивестная переменная c неизвестным значением
-double tms = 0.001;     // неивестная переменная c неизвестным значением
-double mt = 0.001;      // неивестная переменная c неизвестным значением
+
+double m2 = 90;         // + М ?
+double tms = 0;     // +
 
 /* Разные названия переменных с начальным массивом Z ? */
-double g0 = 90;      // gp?
-double gt0 = 90;     // можно ли их все сразу заменить на те
-double Ip0 = 0.20;     // что в структуре Z ?
+double g0 = 90;           // gp?
+double gt0 = 169.72;      // + можно ли их все сразу заменить на те
+double Ip0 = 5.2040;      // 0.15??  +
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -50,62 +52,124 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
-    // структура объявляется в заголовочном
+    QVector <double> Kvect;
 
+    /* Обработка трекера */
+    QTextStream in;                         // поток данных
+    QString read;
+
+    int ind = 0;                            // индекс для записи в массивы
+
+    QString constPat ("D:/Qt/pr/untitled/Dif.ur/matlab/PatConst.csv");
+    QFile file(constPat);
+    if (!file.open(QFile::ReadOnly)){
+        qDebug() << "File not exists";
+    }
+    else{
+
+        in.setDevice(&file);
+        in >> read;
+        file.close();
+
+        double tr=0;                        // переменные для записи данных из csv файла в разные массивы
+
+        for ( int i=0; i < 37; i++ ){
+
+                ind=read.indexOf(",");
+                tr=read.left(ind).toDouble();
+                Kvect.append(tr);                // массив времени
+                read.remove(0,ind+1);
+
+        }
+    }
 
     double  a = 0.0,    // начальное время
-            b = 1440.0;    // конечное время
-    double  h = 5;   // шаг
+            b = 720.0;    // конечное время
+    double  step = 5;   // шаг НЕ ШАГ)) периодичность!
+    double  h = 2.5;
 
     vector<DataZ> data;
     DataZ start;
     start.t = a;
 
-    int stepCount = (b / h) + 1;
-    double currentTime = a + h;
+    int stepCount = (b / step) + 1;
+    double currentTime = a + step;
 
-    // double K[4];
     double K[7];
+    double dz;
+    double err;
+    double s;
+    double hmin = 0.01;
+    double hmax = 0.25;
+    double eps=0.000001; //error allowance in one step calculation.
+    double h1 = h;
+    double h2 = h;
+    double h3 = h;
+    double h4 = h;
+    double h5 = h;
+    double h6 = h;
+    double h7 = h;
+    double h8 = h;
+    double h9 = h;
+    double h10 = h;
+    double h11 = h;
+    double h12 = h;
+    double h13 = h;
+    double h14 = h;
+    double hopt1;
+    double hopt2;
+    double hopt3;
+    double hopt4;
+    double hopt5;
+    double hopt6;
+    double hopt7;
+    double hopt8;
+    double hopt9;
+    double hopt10;
+    double hopt11;
+    double hopt12;
+    double hopt13;
+    double hopt14;
 
-    Dig = (1e-05)*1000; // вместо 1е-05 массу углеводов
+    double OB = 6.63;       // result of bolus calculation +
 
-     tm1 = 30;
-     Tm = 30;
-     tms = 0.0001;
+    Dig = 1176*m2+1; // вместо m2 массу углеводов
+    Dbol1=del*OB;
+    Dbol2=(1-del)*OB;
+    Dbol3=0;
+
 
     /************************************************                        Дано                                           *************************************************/
 
     /* bgDynam */               // присвоение стартовых значений в структуру для расчёта
-    double Ginit=130.22;        // начальный уровень гликемии
-    start.gp=Ginit*1.8;
-    start.Il=2.478;
-    start.Ip=2.756; //55.12/20;
-    start.fgut=0; // mg
-    start.fliq=0; // mg
-    start.fsol=0; // mg
-    start.gt=116.8;
-    start.I1=55.12;
-    start.Id=55.12;
-    start.Xt=29.56;
-    start.Ipo=0;
-    start.Yt=-0.6926;
-    start.Ii=584.6;
-    start.It=1796;
+    double Ginit=122.00;        // начальный уровень гликемии
+    g0 = Ginit*1.8;                 // +
+    start.gp = g0;                  // +
+    start.Il = 2.61;                // +
+    start.Ip = Ip0;                 //55.12/20 +
+    start.fgut = 0;                 // mg +
+    start.fliq = 0;                 // mg +
+    start.fsol = 0;                 // mg +
+    start.gt = gt0;                 // +
+    start.I1 = 104.08;              // +
+    start.Id = 104.08;              // +
+    start.Xt = 0;                   // +
+    start.Ipo = 3.08;               // +
+    start.Yt = 0;                   // +
+    start.Ii = 4120;                // +
+    start.It = 10830;               // +
     data.push_back(start);
 
-   // DVI=vbasal*115.75; //u/h->pmol/min
 
     // Initial
-    double Sb=1.55; // pmol/kg/min
-    double EGPb=1.92; // mg/kg/min
+
     double Gpb;
-    double Gtb;
+
     double Ipb;
     double Ib;
     double Gb;
     // Initial
     Gpb=g0; // mg/kg
-    Gtb=gt0; // mg/kg
     Ipb=Ip0; // pmol/kg
     Ib=Ipb*20; // pmol/l
     Gb=Gpb/1.8; // mg/dl
@@ -113,60 +177,25 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     // Insulin
-    double V1=0.05; //l/kg
-    double m1=0.190; //min^-1
-    double m6=0.6471; //dimensionless
+
+    double m1=0.190; //min^-1 +
+    double m6=0.6471; //dimensionless +
     double m3t;
     // Insulin
-    m3t=(m6*m1)/(1- m6);
+    m3t=(m6*m1)/(1- m6); // +
 
-    // Insulin Kraegen
-    double k21=2.97e-2; // КС всасывания инсулина в ткани, min-1 Cobelli
-    double di=12e-2; // КС деградации инсулина, min-1
-    double ka=11.3e-3; // КС всасывания инсулина в плазму, min-1
-
-    // Endogenous glucose production
-    // kp1=2.70; %mg/kg/min
-    double kp2=0.0021; //min^-1
-    double kp3=0.009; //mg/kg/min per pmol/l
-    double kp4=0.0618; //mg/kg/min per pmol/kg
-    double ki=0.0079; //min^-1
-
-    // Glucose appearance
-    double fract=0.9; // Assimilated glucose fraction
-    double kgabs=0.057; // RC glucose absorption, min-1,  Dalla Man
-    double kgri=0.056; // RC grinding, min-1,  Dalla Man
-    double kmin=0.008; // min rate of gut empying
-    double kmax=0.056; // max rate of gut empying
-    // c=0.115; // percentage, kgut=(kmin+kmax)/2 left обеспечивает 2 волны
-    // b=0.72; // percentage, kgut=(kmin+kmax)/2 right
-    Vg=1.8; // plasma per BW, dl/kg
+    Vg=1.8; // plasma per BW, dl/kg +
 
     // Glucose compartments
-    double k1gg=0.065;
-    double k2gg=0.079;
-
-    // Glucose Utilization
-    // Fcns=0.8; %mg/kg/min
-    double Vm0=2.0; //mg/kg/min
-    // Vmxx=0.047; %mg/kg/min per pmol/l
-    double Km0=205.59; //mg/kg
-    double p2U=0.0731; //min^-1
-
-    // Renal scretion
-    double ke1=0.0005; // Rate of renal excretion, min-1, DM
-    double ke2=339/Vg; // Threshold of renal excretion, mg/dl
-
-    // Secretion
-    double gamma=0.5;  // min^-1
-    double alpha=0.050; // min^-1
-    double betha=0.11; // pmol/kg per (mg/dl)
+    double k1gg=0.065; // +
+    double k2gg=0.079; // +
 
     // Fluctuations
     double vbas;
-    double Abol;
+    //double Abol;
     double bol1;
     double bol2;
+    double bol3;
     double vbol;
 
     double vm;
@@ -187,617 +216,442 @@ MainWindow::MainWindow(QWidget *parent)
     double dIi;
     double dId;
 
-    double gp;
-    gp = start.gp;
-    double Id;
-    Id = start.Id;
-    double Ipo;
-    Ipo = start.Ipo;
-    double fgut;
-    fgut = start.fgut;
-    double fsol;
-    fsol = start.fsol;
-    double fliq;
-    fliq = start.fliq;
-    double gt;
-    gt = start.gt;
-    double Xt;
-    Xt = start.Xt;
-    double I1;
-    I1 = start.I1;
-    double Ip;
-    Ip = start.Ip;
-    double It;
-    It = start.It;
-    double Il;
-    Il = start.Il;
-    double Yt;
-    Yt = start.Yt;
-    double Ii;
-    Ii = start.Ii;
+    double gp = start.gp;
+    double Id = start.Id;
+    double Ipo = start.Ipo;
+    double fgut = start.fgut;
+    double fsol = start.fsol;
+    double fliq = start.fliq;
+    double gt = start.gt;
+    double Xt = start.Xt;
+    double I1 = start.I1;
+    double Ip = start.Ip;
+    double It = start.It;
+    double Il = start.Il;
+    double Yt = start.Yt;
+    double Ii = start.Ii;
     /*************************************************                      Конец дано)                              ********************************************************/
 
     for (int j = 1; j <= stepCount; j++)
     {
 
         /* */
-        t = currentTime;
-
         // Fluctuations
-        vbas=(Vbas+0.00001)*6000/60; // pmol/min
-        Abol=(Dbol+0.001)*6000;
+        vbas=Vbas*100; // pmol/min
         //точки из матлаб убрал в последующих двух уравнениях после второй скобки множителя
-        bol1=1/Ti1*(1-del)*(1./(1+exp(-3*(t-tm1+10-ti1))))*(1./(1+exp(-3*(tm1-10+ti1-t+Ti1))));
-        bol2=1/Ti2*del*(1./(1+exp(-3*(t-tm1+10-ti2))))*(1./(1+exp(-3*(tm1-10+ti2-t+Ti2))));
-        vbol=Abol*(bol1+bol2);
+        bol1=1/Ti1*Dbol1*(1./(1+exp(-3*(t+10-ti1))))*(1./(1+exp(-3*(-10+ti1-t+Ti1))));
+        bol2=1/Ti2*Dbol2*(1./(1+exp(-3*(t+10-ti2))))*(1./(1+exp(-3*(-10+ti2-t+Ti2))));
+        bol3=1/Ti3*Dbol3*(1./(1+exp(-3*(t+10-ti3))))*(1./(1+exp(-3*(-10+ti3-t+Ti3))));
+        vbol=6000*(bol1+bol2+bol3);
 
-        double Heavi1;
-        if( (t-tm1-tms) >= 0){
-             Heavi1 = 1;}
-        if( (t-tm1-tms) < 0){
-             Heavi1 = 0;}
 
-        double Heavi2;
-        if( (-(t-tm1-Tm-tms)) >= 0){
-             Heavi2 = 1;}
-        if( (-(t-tm1-Tm-tms)) < 0){
-             Heavi2 = 0;}
-        vm=Dig/Tm*Heavi1*Heavi2; // mg/min
-
-        //
-        double alp=5/(2*Dig*(1-b));
-        double bet=5/(2*Dig*c);
-
-        //
+        vm=Dig/Tm*(1./(1+exp(-3*(t-tm1))))*(1./(1+exp(-3*(-(t-tm1-Tm)))));
 
 
 
-        double Heavi3;
-        if( (kp1-kp2*gp-kp3*Id - kp4*Ipo)  >= 0){
-             Heavi3 = 1;}
-        if( (kp1-kp2*gp-kp3*Id-kp4*Ipo) < 0){
-             Heavi3 = 0;}
-        double EGP=(kp1-kp2*gp-kp3*Id-kp4*Ipo)*Heavi3;
-
-
-        double Vmx=Vm0+Vmxx*Xt;
-
-
-        double Uid=(Vmx*gt)/(Km0+gt);
-        Gtb=(Fcns-EGPb+k1gg*Gpb)/k2gg;
-
-
-        double kgut=kmin+(kmax-kmin)/2*(tanh(alp*(fsol+fliq-b*Dig))-tanh(bet*(fsol+fliq-c*Dig))+2);
-        double G=gp/Vg;
-
-
-        double fmeal=fract/mt*kgabs*fgut; // Meal
-
-        double Heavi4;
-        if( (gp-ke2)  >= 0){
-             Heavi4 = 1;}
-        if( (gp-ke2) < 0){
-             Heavi4 = 0;}
-        double eren=ke1*(gp-ke2)*Heavi4; // Renal glucose excretion
+       // Gtb=(Fcns-EGPb+k1gg*Gpb)/k2gg;
 
         /* ДУ */
 
-        // h - шаг, h=5
+        // Решаем dgp через Рунге-Кутта
+        //dgp=EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt; // plasma glucose mg/dl
+        // dgp = f(fgut,gt,Id,Ipo,fgut,gp)
 
-        // Решаем dgp через Рунге-Кутта                                                                  // или оставить прирощение только для главной величины???
-        // dgp = EGP+fmeal-Fcns-eren-k1gg*gp+k2gg*gt; // plasma glucose mg/dl
-        // dgp = f(gp,gt)?
-        K[0] = EGP+fmeal-Fcns-eren-k1gg*gp+k2gg*gt;
-        K[1] = EGP+fmeal-Fcns-eren-k1gg*(gp+ h*K[0]/2.0)+k2gg*(gt+ h/2.0);
-        K[2] = EGP+fmeal-Fcns-eren-k1gg*(gp+ h*K[1]/2.0)+k2gg*(gt+ h/2.0);
-        K[3] = EGP+fmeal-Fcns-eren-k1gg*(gp+ h*K[2])+k2gg*gt;
+
+//        double EGP;
+//        EGP=(Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)*Heavi3;
+
+
+        double Heavi1;
+        if( (gp-Kvect.at(32))>= 0){
+             Heavi1 = 1;}
+        if( (gp-Kvect.at(32)) < 0){
+             Heavi1 = 0;}
+
+        double Heavi3;
+        if( (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)  >= 0){
+             Heavi3 = 1;}
+        if( (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo) < 0){
+             Heavi3 = 0;}
+
+        K[0] = (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt;
+
+        if( ((gp+ h*K[0]/2.0)-Kvect.at(32))>= 0){
+             Heavi1 = 1;}
+        if( ((gp+ h*K[0]/2.0)-Kvect.at(32)) < 0){
+             Heavi1 = 0;}
+        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))  >= 0){
+             Heavi3 = 1;}
+        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
+             Heavi3 = 0;}
+        K[1] = (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[0]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[0]/2.0)+Kvect.at(25)*(gt+ h/2.0);
+
+        if( ((gp+ h*K[1]/2.0)-Kvect.at(32))>= 0){
+             Heavi1 = 1;}
+        if( ((gp+ h*K[1]/2.0)-Kvect.at(32)) < 0){
+             Heavi1 = 0;}
+        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))  >= 0){
+             Heavi3 = 1;}
+        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
+             Heavi3 = 0;}
+        K[2] = (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[1]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[1]/2.0)+Kvect.at(25)*(gt+ h/2.0);
+
+        if( ((gp+ h*K[2])-Kvect.at(32))>= 0){
+             Heavi1 = 1;}
+        if( ((gp+ h*K[2])-Kvect.at(32)) < 0){
+             Heavi1 = 0;}
+        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))  >= 0){
+             Heavi3 = 1;}
+        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h)) < 0){
+             Heavi3 = 0;}
+        K[3] = (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[2])-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[2])+Kvect.at(25)*(gt+ h);
+
         dgp   = gp + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
         // Решение dgp через Дормана-Принса
 /*
-        K[0] = EGP+fmeal-Fcns-eren-k1gg*gp+k2gg*gt;
-        K[1] = EGP+fmeal-Fcns-eren-k1gg*(gp+ h*K[0]/5.0)+k2gg*(gt+ h/5.0);
-        K[2] = EGP+fmeal-Fcns-eren-k1gg*(gp+ (3*h*K[0]/40.0) + (9*h*K[1]/40.0) )+k2gg*(gt+ 3*h/10.0);
-        K[3] = EGP+fmeal-Fcns-eren-k1gg*(gp+ (44*h*K[0]/45.0) + (-56*h*K[1]/15.0) + (32*h*K[2]/9.0) )+k2gg*(gt+ 4*h/5.0);
-        K[4] = EGP+fmeal-Fcns-eren-k1gg*(gp+ (19372*h*K[0]/6561.0) + (-25360*h*K[1]/2187.0) + (64448*h*K[2]/6561.0) + (-212*h*K[3]/729.0) )+k2gg*(gt+ 8*h/9.0);
-        K[5] = EGP+fmeal-Fcns-eren-k1gg*(gp+ (9017*h*K[0]/3168.0) + (-355*h*K[1]/33.0) + (46732*h*K[2]/5247.0) + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )+k2gg*(gt+ h);
-        K[6] = EGP+fmeal-Fcns-eren-k1gg*(gp+ (35*h*K[0]/384.0) + (500*h*K[2]/1113.0) + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + (11*h*K[5]/84.0) )+k2gg*(gt+ h);
+        double Heavi1;
+        if( (gp-Kvect.at(32))>= 0){
+             Heavi1 = 1;}
+        if( (gp-Kvect.at(32)) < 0){
+             Heavi1 = 0;}
 
-        dgp   = gp + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = gp + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
+        double Heavi3;
+        if( (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)  >= 0){
+             Heavi3 = 1;}
+        if( (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo) < 0){
+             Heavi3 = 0;}
+
+        K[0] = (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt;
+
+        if( ((gp+ h1*K[0]/5.0)-Kvect.at(32))>= 0){
+             Heavi1 = 1;}
+        if( ((gp+ h1*K[0]/5.0)-Kvect.at(32)) < 0){
+             Heavi1 = 0;}
+        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h1*K[0]/5.0)-Kvect.at(13)*(Id+ h1/5.0)-Kvect.at(14)*(Ipo+ h1/5.0))  >= 0){
+             Heavi3 = 1;}
+        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h1*K[0]/5.0)-Kvect.at(13)*(Id+ h1/5.0)-Kvect.at(14)*(Ipo+ h1/5.0)) < 0){
+             Heavi3 = 0;}
+        K[1] = (Kvect.at(11)-Kvect.at(12)*(gp+ h1*K[0]/5.0)-Kvect.at(13)*(Id+ h1/5.0)-Kvect.at(14)*(Ipo+ h1/5.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h1/5.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h1*K[0]/5.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h1*K[0]/5.0)+Kvect.at(25)*(gt+ h1/5.0);
 */
 
         // Решаем dgt через Рунге-Кутта
-        // dgt=-Uid+k1gg*gp-k2gg*gt;
-        // dgt = f(gp,gt)?
-        K[0] = -Uid+k1gg*gp-k2gg*gt;
-        K[1] = -Uid+k1gg*(gp+ h/2.0)-k2gg*(gt+ h*K[0]/2.0);
-        K[2] = -Uid+k1gg*(gp+ h/2.0)-k2gg*(gt+ h*K[1]/2.0);
-        K[3] = -Uid+k1gg*(gp+ h)-k2gg*(gt+ h*K[2]);
+
+        // dgt=-((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt;
+        // dgt = f(Xt,gp,gt)
+
+        K[0] = -((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt;
+        K[1] = -((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[0]/2.0))/(Kvect.at(29)+(gt + h*K[0]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[0]/2.0);
+        K[2] = -((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[1]/2.0))/(Kvect.at(29)+(gt + h*K[1]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[1]/2.0);
+        K[3] = -((Kvect.at(27)+Kvect.at(28)*(Xt + h))*(gt + h*K[2]))/(Kvect.at(29)+(gt + h*K[2]))+Kvect.at(24)*(gp + h)-Kvect.at(25)*(gt + h*K[2]);
         dgt   = gt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
         // Решение dgt через Дормана-Принса
 /*
-        K[0] = -Uid+k1gg*gp-k2gg*gt;
-        K[1] = -Uid+k1gg*(gp+ h/5.0)-k2gg*(gt+ h*K[0]/5.0);
-        K[2] = -Uid+k1gg*(gp+ 3*h/10.0)-k2gg*(gt+ 3*h*K[0]/40.0 +9*h*K[1]/40.0);
-        K[3] = -Uid+k1gg*(gp+ 4*h/5.0)-k2gg*(gt+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0);
-        K[4] = -Uid+k1gg*(gp+ 8*h/9.0)-k2gg*(gt+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) );
-        K[5] = -Uid+k1gg*(gp+ h)-k2gg*(gt+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) );
-        K[6] = -Uid+k1gg*(gp+ h)-k2gg*(gt+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0 );
 
-        dgt   = gt + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = gt + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
 
         // Решаем dI1 через Рунге-Кутта
-        // dI1=-ki*(I1-Ip/V1);
-        // dI1 = f(Id,I1)?
-        K[0] = -ki*(Id-I1);
-        K[1] = -ki*((Id+ h/2.0)-(I1+ h*K[0]/2.0));
-        K[2] = -ki*((Id+ h/2.0)-(I1+ h*K[1]/2.0));
-        K[3] = -ki*((Id+ h)-(I1+ h*K[2]));
+
+        // dI1=-Kvect.at(15)*(I1-Ip/Kvect.at(4));
+        // dI1 = f(Ip,I1)
+
+        K[0] = -Kvect.at(15)*(I1-Ip/Kvect.at(4));
+        K[1] = -Kvect.at(15)*((I1 + h*K[0]/2.0)-(Ip+ h/2.0)/Kvect.at(4));
+        K[2] = -Kvect.at(15)*((I1 + h*K[1]/2.0)-(Ip+ h/2.0)/Kvect.at(4));
+        K[3] = -Kvect.at(15)*((I1 + h*K[2])-(Ip+ h)/Kvect.at(4));
         dI1   = I1 + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
         // Решение dI1 через Дормана-Принса
 /*
-        K[0] = -ki*(Id-I1);
-        K[1] = -ki*((Id+ h/5.0)-(I1+ h*K[0]/5.0));
-        K[2] = -ki*((Id+ 3*h/10.0)-(I1+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0));
-        K[3] = -ki*((Id+ 4*h/5.0)-(I1+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0));
-        K[4] = -ki*((Id+ 8*h/9.0)-(I1+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) ));
-        K[5] = -ki*((Id+ h)-(I1+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) ));
-        K[6] = -ki*((Id+ h)-(I1+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0));
 
-        dI1   = I1 + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = I1 + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
 
         // Решаем dId через Рунге-Кутта
-        // dId=-ki*(Id-I1);
-        // dId = f(Id,I1)?
-        K[0] = -ki*(Id-I1);
-        K[1] = -ki*((Id+ h*K[0]/2.0)-(I1+ h/2.0));
-        K[2] = -ki*((Id+ h*K[1]/2.0)-(I1+ h/2.0));
-        K[3] = -ki*((Id+ h*K[2])-(I1+ h));
+        // dId=-Kvect.at(15)*(Id-I1);
+        // dId = f(I1,Id)?
+        K[0] = -Kvect.at(15)*(Id-I1);
+        K[1] = -Kvect.at(15)*((Id + h*K[0]/2.0)-(I1+h/2.0));
+        K[2] = -Kvect.at(15)*((Id + h*K[1]/2.0)-(I1+h/2.0));
+        K[3] = -Kvect.at(15)*((Id + h*K[2])-(I1+h));
         dId   = Id + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
         // Решение dId через Дормана-Принса
 /*
-        K[0] = -ki*(Id-I1);
-        K[1] = -ki*((Id+ h*K[0]/5.0)-(I1+ h/5.0));
-        K[2] = -ki*((Id+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)-(I1+ 3*h/10.0));
-        K[3] = -ki*((Id+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0 )-(I1+ 4*h/5.0));
-        K[4] = -ki*((Id+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )-(I1+ 8*h/9.0));
-        K[5] = -ki*((Id+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (-49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )-(I1+ h));
-        K[6] = -ki*((Id+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0)-(I1+ h));
-
-        dId   = Id + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = Id + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
+        K[0] = -Kvect.at(15)*(Id-I1);
+        K[1] = -Kvect.at(15)*((Id + h4*K[0]/5.0)-(I1+h4/5.0));
+        K[2] = -Kvect.at(15)*((Id + 3*h4*K[0]/40.0 + 9*h4*K[1]/40.0)-(I1+3*h4/10.0));
+        K[3] = -Kvect.at(15)*((Id + 44*h4*K[0]/45.0 + (-56*h4*K[1]/15.0) + 32*h4*K[2]/9.0)-(I1+4*h4/5.0));
+        K[4] = -Kvect.at(15)*((Id + 19372*h4*K[0]/6561.0 + (-25360*h4*K[1]/2187.0) + 64448*h4*K[2]/6561.0 + (-212*h4*K[3]/729.0))-(I1+8*h4/9.0));
+        K[5] = -Kvect.at(15)*((Id + 9017*h4*K[0]/3168.0 + (-355*h4*K[1]/33.0) + 46732*h4*K[2]/5247.0 + (49*h4*K[3]/176.0) + (-5103*h4*K[4]/18656.0))-(I1+h4));
+        K[6] = -Kvect.at(15)*((Id + 35*h4*K[0]/384.0 + 500*h4*K[2]/1113.0 + (125*h4*K[3]/192.0) + (-2187*h4*K[4]/6784.0) + 11*h4*K[5]/84.0)-(I1+h4));
+        dId   = Id + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h4;                                                // во многих источниках домножается на h, но в одном нету такого.
+        dz = Id + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h4;
+        err = abs(dz-dId);
+        s = pow(eps*h4/(2*err),1/5);
+        hopt4 = s*h4;
+        if( hopt4 < hmin) hopt4 = hmin;
+        else if(hopt4 > hmax) hopt4 = hmax;
 */
 
         // Решаем dXt через Рунге-Кутта
-        // dXt=-p2U*Xt+p2U*((Ip/V1)-Ib)*heaviside((Ip/V1)-Ib);
-        // dXt = f(Xt,Ip)?
-        double Heavi5;
-        if( ((Ip/V1)-Ib)  >= 0){
-             Heavi5 = 1;}
-        if( ((Ip/V1)-Ib) < 0){
-             Heavi5 = 0;}
-        K[0] = -p2U*Xt+p2U*((Ip/V1)-Ib)*Heavi5;
+        // dXt=-Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2;
+        // dXt = f(Ip,Xt)?
+        double Heavi2;
+        if( ((Ip/Kvect.at(4))-Kvect.at(1)) >= 0){
+             Heavi2 = 1;}
+        if( ((Ip/Kvect.at(4))-Kvect.at(1)) < 0){
+             Heavi2 = 0;}
+        K[0] = -Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2;
 
-        double Heavi6;
-        if( (((Ip+ h/2.0)/V1)-Ib)  >= 0){
-             Heavi6 = 1;}
-        if( (((Ip+ h/2.0)/V1)-Ib) < 0){
-             Heavi6 = 0;}
-        K[1] = -p2U*(Xt+ h*K[0]/2.0)+p2U*(((Ip+ h/2.0)/V1)-Ib)*Heavi6;
+        if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
+             Heavi2 = 1;}
+        if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) < 0){
+             Heavi2 = 0;}
+        K[1] = -Kvect.at(30)*(Xt+ h*K[0]/2.0)+Kvect.at(30)*(((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1))*Heavi2;
 
-        double Heavi7;
-        if( (((Ip+ h/2.0)/V1)-Ib)  >= 0){
-             Heavi7 = 1;}
-        if( (((Ip+ h/2.0)/V1)-Ib) < 0){
-             Heavi7 = 0;}
-        K[2] = -p2U*(Xt+ h*K[1]/2.0)+p2U*(((Ip+ h/2.0)/V1)-Ib)*Heavi7;
+        if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
+             Heavi2 = 1;}
+        if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) < 0){
+             Heavi2 = 0;}
+        K[2] = -Kvect.at(30)*(Xt + h*K[1]/2.0)+Kvect.at(30)*(((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1))*Heavi2;
 
-        double Heavi8;
-        if( (((Ip+ h)/V1)-Ib)  >= 0){
-             Heavi8 = 1;}
-        if( (((Ip+ h)/V1)-Ib) < 0){
-             Heavi8 = 0;}
-        K[3] = -p2U*(Xt+ h*K[2])+p2U*(((Ip+ h)/V1)-Ib)*Heavi8;
+        if( (((Ip+ h)/Kvect.at(4))-Kvect.at(1)) >= 0){
+             Heavi2 = 1;}
+        if( (((Ip+ h)/Kvect.at(4))-Kvect.at(1)) < 0){
+             Heavi2 = 0;}
+        K[3] = -Kvect.at(30)*(Xt+ h*K[2])+Kvect.at(30)*(((Ip+ h)/Kvect.at(4))-Kvect.at(1))*Heavi2;
+
         dXt   = Xt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
         // Решение dXt через Дормана-Принса
 /*
-        double Heavi13;
-        if( ((Ip/V1)-Ib)  >= 0){
-             Heavi13 = 1;}
-        if( ((Ip/V1)-Ib) < 0){
-             Heavi13 = 0;}
-        K[0] = -p2U*Xt+p2U*((Ip/V1)-Ib)*Heavi13;
-        double Heavi14;
-        if( (((Ip+ h/5.0)/V1)-Ib)  >= 0){
-             Heavi14 = 1;}
-        if( (((Ip+ h/5.0)/V1)-Ib) < 0){
-             Heavi14 = 0;}
-        K[1] = -p2U*(Xt+ h*K[0]/5.0)+p2U*(((Ip+ h/5.0)/V1)-Ib)*Heavi14;
-        double Heavi15;
-        if( (((Ip+ 3*h/10.0)/V1)-Ib)  >= 0){
-             Heavi15 = 1;}
-        if( (((Ip+ 3*h/10.0)/V1)-Ib) < 0){
-             Heavi15 = 0;}
-        K[2] = -p2U*(Xt+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)+p2U*(((Ip+ 3*h/10.0)/V1)-Ib)*Heavi15;
-        double Heavi16;
-        if( (((Ip+ 4*h/5.0)/V1)-Ib)  >= 0){
-             Heavi16 = 1;}
-        if( (((Ip+ 4*h/5.0)/V1)-Ib) < 0){
-             Heavi16 = 0;}
-        K[3] = -p2U*(Xt+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)+p2U*(((Ip+ 4*h/5.0)/V1)-Ib)*Heavi16;
-        double Heavi17;
-        if( (((Ip+ 8*h/9.0)/V1)-Ib)  >= 0){
-             Heavi17 = 1;}
-        if( (((Ip+ 8*h/9.0)/V1)-Ib) < 0){
-             Heavi17 = 0;}
-        K[4] = -p2U*(Xt+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )+p2U*(((Ip+ 8*h/9.0)/V1)-Ib)*Heavi17;
-        double Heavi18;
-        if( (((Ip+ h)/V1)-Ib)  >= 0){
-             Heavi18 = 1;}
-        if( (((Ip+ h)/V1)-Ib) < 0){
-             Heavi18 = 0;}
-        K[5] = -p2U*(Xt+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )+p2U*(((Ip+ h)/V1)-Ib)*Heavi18;
-        double Heavi19;
-        if( (((Ip+ h)/V1)-Ib)  >= 0){
-             Heavi19 = 1;}
-        if( (((Ip+ h)/V1)-Ib) < 0){
-             Heavi19 = 0;}
-        K[6] = -p2U*(Xt+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0)+p2U*(((Ip+ h)/V1)-Ib)*Heavi19;
 
-        dXt   = Xt + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = Xt + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
 
         // Решаем dIl через Рунге-Кутта
-        // dIl=-(m1+m3t)*Il+m2*Ip; // Liver insulin pmol/kg
-        // dIl = f(Il,Ip)?
-        K[0] = -(m1+m3t)*Il+m2*Ip;
-        K[1] = -(m1+m3t)*(Il+ h*K[0]/2.0)+m2*(Ip+ h/2.0);
-        K[2] = -(m1+m3t)*(Il+ h*K[1]/2.0)+m2*(Ip+ h/2.0);
-        K[3] = -(m1+m3t)*(Il+ h*K[2])+m2*(Ip+ h);
+        // dIl=-(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip;
+        // dIl = f(Ip,Il)?
+
+        K[0] = -(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip;
+        K[1] = -(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[0]/2.0)+Kvect.at(6)*(Ip+ h/2.0);
+        K[2] = -(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[1]/2.0)+Kvect.at(6)*(Ip+ h/2.0);
+        K[3] = -(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[2])+Kvect.at(6)*(Ip+ h);
+
         dIl   = Il + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
-         // Решение dIl через Дормана-Принса
+        // Решение dIl через Дормана-Принса
 /*
-        K[0] = -(m1+m3t)*Il+m2*Ip;
-        K[1] = -(m1+m3t)*(Il+ h*K[0]/5.0)+m2*(Ip+ h/5.0);
-        K[2] = -(m1+m3t)*(Il+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)+m2*(Ip+ 3*h/10.0);
-        K[3] = -(m1+m3t)*(Il+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)+m2*(Ip+ 4*h/5.0);
-        K[4] = -(m1+m3t)*(Il+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )+m2*(Ip+ 8*h/9.0);
-        K[5] = -(m1+m3t)*(Il+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )+m2*(Ip+ h);
-        K[6] = -(m1+m3t)*(Il+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0)+m2*(Ip+ h);
 
-        dIl   = Il + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = Il + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
 
-
         // Решаем dIp через Рунге-Кутта
-        // dIp=-m2*Ip+m1*Il+ka/mt*It-di*Ip; // Plasma insulin pmol/kg
-        // dIp = f(Ip,It)? // f(Ip,Il)? // f(Ip,Il,It)? ВОПРОС ПРО ПЕРЕМЕННЫЕ!
-        K[0] = -m2*Ip+m1*Il+ka/mt*It-di*Ip;
-        K[1] = -m2*(Ip+ h*K[0]/2.0)+m1*(Il+ h/2.0)+ka/mt*(It+ h/2.0)-di*(Ip+ h*K[0]/2.0);
-        K[2] = -m2*(Ip+ h*K[1]/2.0)+m1*(Il+ h/2.0)+ka/mt*(It+ h/2.0)-di*(Ip+ h*K[1]/2.0);
-        K[3] = -m2*(Ip+ h*K[2])+m1*(Il+ h)+ka/mt*(It+ h)-di*(Ip+ h*K[2]);
+        // dIp=-Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip;
+        // dIp = f(Il,It,Ip)?
+        K[0] = -Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip;
+        K[1] = -Kvect.at(6)*(Ip+ h*K[0]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[0]/2.0);
+        K[2] = -Kvect.at(6)*(Ip+ h*K[1]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[1]/2.0);
+        K[3] = -Kvect.at(6)*(Ip+ h*K[2])+Kvect.at(5)*(Il+ h)+Kvect.at(10)/Kvect.at(0)*(It+ h)-Kvect.at(9)*(Ip+ h*K[2]);
+
         dIp   = Ip + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
         // Решение dIp через Дормана-Принса
 /*
-        K[0] = -m2*Ip+m1*Il+ka/mt*It-di*Ip;
-        K[1] = -m2*(Ip+ h*K[0]/5.0)+m1*(Il+ h/5.0)+ka/mt*(It+ h/5.0)-di*(Ip+ h*K[0]/5.0);
-        K[2] = -m2*(Ip+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)+m1*(Il+ 3*h/10.0)+ka/mt*(It+ 3*h/10.0)-di*(Ip+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0);
-        K[3] = -m2*(Ip+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)+m1*(Il+ 4*h/5.0)+ka/mt*(It+ 4*h/5.0)-di*(Ip+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0);
-        K[4] = -m2*(Ip+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )+m1*(Il+ 8*h/9.0)+ka/mt*(It+ 8*h/9.0)-di*(Ip+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) );
-        K[5] = -m2*(Ip+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )+m1*(Il+ h)+ka/mt*(It+ h)-di*(Ip+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) );
-        K[6] = -m2*(Ip+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0 )+m1*(Il+ h)+ka/mt*(It+ h)-di*(Ip+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0 );
 
-        dIp   = Ip + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = Ip + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
 
         // Решаем dfgut через Рунге-Кутта
-        // dfgut=-kgabs*fgut+kgut*fliq; // Gut glucose
-        // dfgut = f(fgut,fliq)?
-        K[0] = -kgabs*fgut+kgut*fliq;
-        K[1] = -kgabs*(fgut+ h*K[0]/2.0)+kgut*(fliq+ h/2.0);
-        K[2] = -kgabs*(fgut+ h*K[1]/2.0)+kgut*(fliq+ h/2.0);
-        K[3] = -kgabs*(fgut+ h*K[2])+kgut*(fliq+ h);
+        // dfgut=-Kvect.at(17)*fgut+kgut*fliq;
+        // dfgut = f(fliq,fsol,fgut)?
+
+//        double kgut;
+//        kgut=Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2);
+
+        K[0] = -Kvect.at(17)*fgut+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2)*fliq;
+        K[1] = -Kvect.at(17)*(fgut+ h*K[0]/2.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(22)*Dig))+2)*(fliq+ h/2.0);
+        K[2] = -Kvect.at(17)*(fgut+ h*K[1]/2.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(22)*Dig))+2)*(fliq+ h/2.0);
+        K[3] = -Kvect.at(17)*(fgut+ h*K[2])+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h)+(fliq+ h)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h)+(fliq+ h)-Kvect.at(22)*Dig))+2)*(fliq+ h);
+
         dfgut   = fgut + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
         // Решение dfgut через Дормана-Принса
 /*
-        K[0] = -kgabs*fgut+kgut*fliq;
-        K[1] = -kgabs*(fgut+ h*K[0]/5.0)+kgut*(fliq+ h/5.0);
-        K[2] = -kgabs*(fgut+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)+kgut*(fliq+ 3*h/10.0);
-        K[3] = -kgabs*(fgut+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)+kgut*(fliq+ 4*h/5.0);
-        K[4] = -kgabs*(fgut+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )+kgut*(fliq+ 8*h/9.0);
-        K[5] = -kgabs*(fgut+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )+kgut*(fliq+ h);
-        K[6] = -kgabs*(fgut+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0)+kgut*(fliq+ h);
 
-        dfgut   = fgut + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = fgut + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
 
         // Решаем dfliq через Рунге-Кутта
-        // dfliq=-kgut*fliq+kgri*fsol; // Glucose in liquid phase
+        // dfliq=-kgut*fliq+Kvect.at(18)*fsol;
         // dfliq = f(fliq,fsol)?
-        K[0] = -kgut*fliq+kgri*fsol;
-        K[1] = -kgut*(fliq+ h*K[0]/2.0)+kgri*(fsol+ h/2.0);
-        K[2] = -kgut*(fliq+ h*K[1]/2.0)+kgri*(fsol+ h/2.0);
-        K[3] = -kgut*(fliq+ h*K[2])+kgri*(fsol+ h);
+
+        K[0] = -(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2))*fliq+Kvect.at(18)*fsol;
+        K[1] = -(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[0]/2.0)+Kvect.at(18)*(fsol+ h/2.0);
+        K[2] = -(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[1]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[1]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[1]/2.0)+Kvect.at(18)*(fsol+ h/2.0);
+        K[2] = -(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h)+(fliq+ h*K[2])-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h)+(fliq+ h*K[2])-Kvect.at(22)*Dig))+2))*(fliq+ h*K[2])+Kvect.at(18)*(fsol+ h);
+
         dfliq   = fliq + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
-         // Решение dfliq через Дормана-Принса
+        // Решение dfliq через Дормана-Принса
 /*
-        K[0] = -kgut*fliq+kgri*fsol;
-        K[1] = -kgut*(fliq+ h*K[0]/5.0)+kgri*(fsol+ h/5.0);
-        K[2] = -kgut*(fliq+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)+kgri*(fsol+ 3*h/10.0);
-        K[3] = -kgut*(fliq+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)+kgri*(fsol+ 4*h/5.0);
-        K[4] = -kgut*(fliq+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )+kgri*(fsol+ 8*h/9.0);
-        K[5] = -kgut*(fliq+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )+kgri*(fsol+ h);
-        K[6] = -kgut*(fliq+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0)+kgri*(fsol+ h);
 
-        dfliq   = fliq + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = fliq + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
-
         // Решаем dfsol через Рунге-Кутта
-        // dfsol=-kgri*fsol+vm; // Glucose in solid phase
+        // dfsol=-Kvect.at(18)*fsol+vm;
         // dfsol = f(fsol,vm)?
-        K[0] = -kgri*fsol+vm;
-        K[1] = -kgri*(fsol+ h*K[0]/2.0)+(vm+ h/2.0);
-        K[2] = -kgri*(fsol+ h*K[1]/2.0)+(vm+ h/2.0);
-        K[3] = -kgri*(fsol+ h*K[2])+(vm+ h);
+
+        K[0] = -Kvect.at(18)*fsol+vm;
+        K[1] = -Kvect.at(18)*(fsol+ h*K[0]/2.0)+(vm+ h/2.0);
+        K[2] = -Kvect.at(18)*(fsol+ h*K[1]/2.0)+(vm+ h/2.0);
+        K[3] = -Kvect.at(18)*(fsol+ h*K[2])+(vm+ h);
+
         dfsol   = fsol + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
         // Решение dfsol через Дормана-Принса
 /*
-        K[0] = -kgri*fsol+vm;
-        K[1] = -kgri*(fsol+ h*K[0]/5.0)+(vm+ h/5.0);
-        K[2] = -kgri*(fsol+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)+(vm+ 3*h/10.0);
-        K[3] = -kgri*(fsol+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)+(vm+ 4*h/5.0);
-        K[4] = -kgri*(fsol+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )+(vm+ 8*h/9.0);
-        K[5] = -kgri*(fsol+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) +(-5103*h*K[4]/18656.0) )+(vm+ h);
-        K[6] = -kgri*(fsol+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) +(-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0)+(vm+ h);
 
-        dfsol   = fsol + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = fsol + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
-
         // Решаем dIpo через Рунге-Кутта
-        // dIpo=-gamma*Ipo+(Yt+Sb)*heaviside(dgp/Vg) + (Yt+Sb)*(heaviside(-dgp/Vg));
-        // dIpo = f(Ipo,Yt)?
-        double Heavi9;
-        if( (dgp/Vg)  >= 0){
-             Heavi9 = 1;}
-        if( (dgp/Vg) < 0){
-             Heavi9 = 0;}
-        double Heavi10;
-        if( (-dgp/Vg)  >= 0){
-             Heavi10 = 1;}
-        if( (-dgp/Vg) < 0){
-             Heavi10 = 0;}
-        K[0] = -gamma*Ipo+(Yt+Sb)*Heavi9 + (Yt+Sb)*(Heavi10);
-        K[1] = -gamma*(Ipo+ h*K[0]/2.0)+((Yt+ h/2.0)+Sb)*Heavi9 + ((Yt+ h/2.0)+Sb)*(Heavi10);
-        K[2] = -gamma*(Ipo+ h*K[1]/2.0)+((Yt+ h/2.0)+Sb)*Heavi9 + ((Yt+ h/2.0)+Sb)*(Heavi10);
-        K[3] = -gamma*(Ipo+ h*K[2])+((Yt+ h)+Sb)*Heavi9 + ((Yt+ h)+Sb)*(Heavi10);
+        // dIpo=-Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6);
+        // dIpo = f(Yt,dgp,Ipo)?
+        double Heavi5;
+        double Heavi6;
+
+        if( (dgp) >= 0){
+             Heavi5 = 1;}
+        if( (dgp) < 0){
+             Heavi5 = 0;}
+
+        if( (-dgp) >= 0){
+             Heavi6 = 1;}
+        if( (-dgp) < 0){
+             Heavi6 = 0;}
+        K[0] = -Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6);
+
+        if( ((dgp+ h/2.0)) >= 0){
+             Heavi5 = 1;}
+        if( ((dgp+ h/2.0)) < 0){
+             Heavi5 = 0;}
+
+        if( (-(dgp+ h/2.0)) >= 0){
+             Heavi6 = 1;}
+        if( (-(dgp+ h/2.0)) < 0){
+             Heavi6 = 0;}
+        K[1] = -Kvect.at(33)*(Ipo+ h*K[0]/2.0)+((Yt+ h/2.0)+Kvect.at(3))*Heavi5+((Yt+ h/2.0)+Kvect.at(3))*(Heavi6);
+
+        if( ((dgp+ h/2.0)) >= 0){
+             Heavi5 = 1;}
+        if( ((dgp+ h/2.0)) < 0){
+             Heavi5 = 0;}
+
+        if( (-(dgp+ h/2.0)) >= 0){
+             Heavi6 = 1;}
+        if( (-(dgp+ h/2.0)) < 0){
+             Heavi6 = 0;}
+        K[2] = -Kvect.at(33)*(Ipo+ h*K[1]/2.0)+((Yt+ h/2.0)+Kvect.at(3))*Heavi5+((Yt+ h/2.0)+Kvect.at(3))*(Heavi6);
+
+        if( ((dgp+ h)) >= 0){
+             Heavi5 = 1;}
+        if( ((dgp+ h)) < 0){
+             Heavi5 = 0;}
+
+        if( (-(dgp+ h)) >= 0){
+             Heavi6 = 1;}
+        if( (-(dgp+ h)) < 0){
+             Heavi6 = 0;}
+        K[3] = -Kvect.at(33)*(Ipo+ h*K[2])+((Yt+ h)+Kvect.at(3))*Heavi5+((Yt+ h)+Kvect.at(3))*(Heavi6);
+
         dIpo   = Ipo + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
-        // Решение dIpo через Дормана-Принса
+        // Решение dfsol через Дормана-Принса
 /*
-        double Heavi20;
-        if( (dgp/Vg)  >= 0){
-             Heavi20 = 1;}
-        if( (dgp/Vg) < 0){
-             Heavi20 = 0;}
-        double Heavi21;
-        if( (-dgp/Vg)  >= 0){
-             Heavi21 = 1;}
-        if( (-dgp/Vg) < 0){
-             Heavi21 = 0;}
-        K[0] = -gamma*Ipo+(Yt+Sb)*Heavi20 + (Yt+Sb)*(Heavi21);
-        K[1] = -gamma*(Ipo+ h*K[0]/5.0)+((Yt+ h/5.0)+Sb)*Heavi20 + ((Yt+ h/5.0)+Sb)*(Heavi21);
-        K[2] = -gamma*(Ipo+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)+((Yt+ 3*h/10.0)+Sb)*Heavi20 + ((Yt+ 3*h/10.0)+Sb)*(Heavi21);
-        K[3] = -gamma*(Ipo+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)+((Yt+ 4*h/5.0)+Sb)*Heavi20 + ((Yt+ 4*h/5.0)+Sb)*(Heavi21);
-        K[4] = -gamma*(Ipo+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )+((Yt+ 8*h/9.0)+Sb)*Heavi20 + ((Yt+ 8*h/9.0)+Sb)*(Heavi21);
-        K[5] = -gamma*(Ipo+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )+((Yt+ h)+Sb)*Heavi20 + ((Yt+ h)+Sb)*(Heavi21);
-        K[6] = -gamma*(Ipo+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0)+((Yt+ h)+Sb)*Heavi20 + ((Yt+ h)+Sb)*(Heavi21);
 
-        dIpo   = Ipo + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = Ipo + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
 
-
         // Решаем dYt через Рунге-Кутта
-        // dYt=-alpha*(Yt-betha*(G-Gb))*heaviside(betha*(G-Gb)+Sb)+(-alpha*Yt-alpha*Sb)*(heaviside(-Sb-betha*(G-Gb)));
-        // dYt = f(Yt,G)?
-        double Heavi11;
-        if( (betha*(G-Gb)+Sb)  >= 0){
-             Heavi11 = 1;}
-        if( (betha*(G-Gb)+Sb) < 0){
-             Heavi11 = 0;}
-        double Heavi12;
-        if( (-Sb-betha*(G-Gb))  >= 0){
-             Heavi12 = 1;}
-        if( (-Sb-betha*(G-Gb)) < 0){
-             Heavi12 = 0;}
-        K[0] = -alpha*(Yt-betha*(G-Gb))*Heavi11+(-alpha*Yt-alpha*Sb)*(Heavi12);
-        double Heavi22;
-        if( (betha*((G+h/2.0)-Gb)+Sb)  >= 0){
-             Heavi22 = 1;}
-        if( (betha*((G+h/2.0)-Gb)+Sb) < 0){
-             Heavi22 = 0;}
-        double Heavi23;
-        if( (-Sb-betha*((G+h/2.0)-Gb))  >= 0){
-             Heavi23 = 1;}
-        if( (-Sb-betha*((G+h/2.0)-Gb)) < 0){
-             Heavi23 = 0;}
-        K[1] = -alpha*((Yt+ h*K[0]/2.0)-betha*((G+h/2.0)-Gb))*Heavi22+(-alpha*(Yt+ h*K[0]/2.0)-alpha*Sb)*(Heavi23);
-        double Heavi24;
-        if( (betha*((G+h/2.0)-Gb)+Sb)  >= 0){
-             Heavi24 = 1;}
-        if( (betha*((G+h/2.0)-Gb)+Sb) < 0){
-             Heavi24 = 0;}
-        double Heavi25;
-        if( (-Sb-betha*((G+h/2.0)-Gb))  >= 0){
-             Heavi25 = 1;}
-        if( (-Sb-betha*((G+h/2.0)-Gb)) < 0){
-             Heavi25 = 0;}
-        K[2] = -alpha*((Yt+ h*K[1]/2.0)-betha*((G+ h/2.0)-Gb))*Heavi24+(-alpha*(Yt+ h*K[1]/2.0)-alpha*Sb)*(Heavi25);
-        double Heavi26;
-        if( (betha*((G+h)-Gb)+Sb)  >= 0){
-             Heavi26 = 1;}
-        if( (betha*((G+h)-Gb)+Sb) < 0){
-             Heavi26 = 0;}
-        double Heavi27;
-        if( (-Sb-betha*((G+h)-Gb))  >= 0){
-             Heavi27 = 1;}
-        if( (-Sb-betha*((G+h)-Gb)) < 0){
-             Heavi27 = 0;}
-        K[3] = -alpha*((Yt+ h*K[2])-betha*((G+h)-Gb))*Heavi26+(-alpha*(Yt+ h*K[2])-alpha*Sb)*(Heavi27);
+        // dYt=-Kvect.at(34)*(Yt-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*Yt-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+        // dYt = f(gp,Yt)?
+        double Heavi7;
+        double Heavi8;
+
+        if( (Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+             Heavi7 = 1;}
+        if( (Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+             Heavi7 = 0;}
+
+        if( (-Kvect.at(3)-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))) >= 0){
+             Heavi8 = 1;}
+        if( (-Kvect.at(3)-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))) < 0){
+             Heavi8 = 0;}
+        K[0] = -Kvect.at(34)*(Yt-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*Yt-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+
+        if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+             Heavi7 = 1;}
+        if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+             Heavi7 = 0;}
+
+        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) >= 0){
+             Heavi8 = 1;}
+        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) < 0){
+             Heavi8 = 0;}
+        K[1] = -Kvect.at(34)*((Yt+ h*K[0]/2.0)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[0]/2.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+
+        if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+             Heavi7 = 1;}
+        if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+             Heavi7 = 0;}
+
+        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) >= 0){
+             Heavi8 = 1;}
+        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) < 0){
+             Heavi8 = 0;}
+        K[2] = -Kvect.at(34)*((Yt+ h*K[1]/2.0)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[1]/2.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+
+        if( (Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+             Heavi7 = 1;}
+        if( (Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+             Heavi7 = 0;}
+
+        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))) >= 0){
+             Heavi8 = 1;}
+        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))) < 0){
+             Heavi8 = 0;}
+        K[3] = -Kvect.at(34)*((Yt+ h*K[2])-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[2])-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+
         dYt   = Yt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
-        // Решение dYt через Дормана-Принса
+        // Решение dfsol через Дормана-Принса
 /*
-        double Heavi28;
-        if( (betha*(G-Gb)+Sb)  >= 0){
-             Heavi28 = 1;}
-        if( (betha*(G-Gb)+Sb) < 0){
-             Heavi28 = 0;}
-        double Heavi29;
-        if( (-Sb-betha*(G-Gb))  >= 0){
-             Heavi29 = 1;}
-        if( (-Sb-betha*(G-Gb)) < 0){
-             Heavi29 = 0;}
-        K[0] = -alpha*(Yt-betha*(G-Gb))*Heavi28+(-alpha*Yt-alpha*Sb)*(Heavi29);
-        double Heavi30;
-        if( (betha*((G+h/5.0)-Gb)+Sb)  >= 0){
-             Heavi30 = 1;}
-        if( (betha*((G+h/5.0)-Gb)+Sb) < 0){
-             Heavi30 = 0;}
-        double Heavi31;
-        if( (-Sb-betha*((G+h/5.0)-Gb))  >= 0){
-             Heavi31 = 1;}
-        if( (-Sb-betha*((G+h/5.0)-Gb)) < 0){
-             Heavi31 = 0;}
-        K[1] = -alpha*((Yt+ h*K[0]/5.0)-betha*((G+h/5.0)-Gb))*Heavi30+(-alpha*(Yt+ h*K[0]/5.0)-alpha*Sb)*(Heavi31);
-        double Heavi32;
-        if( (betha*((G+3*h/10.0)-Gb)+Sb)  >= 0){
-             Heavi32 = 1;}
-        if( (betha*((G+3*h/10.0)-Gb)+Sb) < 0){
-             Heavi32 = 0;}
-        double Heavi33;
-        if( (-Sb-betha*((G+3*h/10.0)-Gb))  >= 0){
-             Heavi33 = 1;}
-        if( (-Sb-betha*((G+3*h/10.0)-Gb)) < 0){
-             Heavi33 = 0;}
-        K[2] = -alpha*((Yt+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)-betha*((G+3*h/10.0)-Gb))*Heavi32+(-alpha*(Yt+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)-alpha*Sb)*(Heavi33);
-        double Heavi34;
-        if( (betha*((G+4*h/5.0)-Gb)+Sb)  >= 0){
-             Heavi34 = 1;}
-        if( (betha*((G+4*h/5.0)-Gb)+Sb) < 0){
-             Heavi34 = 0;}
-        double Heavi35;
-        if( (-Sb-betha*((G+4*h/5.0)-Gb))  >= 0){
-             Heavi35 = 1;}
-        if( (-Sb-betha*((G+4*h/5.0)-Gb)) < 0){
-             Heavi35 = 0;}
-        K[3] = -alpha*((Yt+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)-betha*((G+4*h/5.0)-Gb))*Heavi34+(-alpha*(Yt+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)-alpha*Sb)*(Heavi35);
-        double Heavi36;
-        if( (betha*((G+8*h/9.0)-Gb)+Sb)  >= 0){
-             Heavi36 = 1;}
-        if( (betha*((G+8*h/9.0)-Gb)+Sb) < 0){
-             Heavi36 = 0;}
-        double Heavi37;
-        if( (-Sb-betha*((G+8*h/9.0)-Gb))  >= 0){
-             Heavi37 = 1;}
-        if( (-Sb-betha*((G+8*h/9.0)-Gb)) < 0){
-             Heavi37 = 0;}
-        K[4] = -alpha*((Yt+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )-betha*((G+8*h/9.0)-Gb))*Heavi36+(-alpha*(Yt+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )-alpha*Sb)*(Heavi37);
-        double Heavi38;
-        if( (betha*((G+h)-Gb)+Sb)  >= 0){
-             Heavi38 = 1;}
-        if( (betha*((G+h)-Gb)+Sb) < 0){
-             Heavi38 = 0;}
-        double Heavi39;
-        if( (-Sb-betha*((G+h)-Gb))  >= 0){
-             Heavi39 = 1;}
-        if( (-Sb-betha*((G+h)-Gb)) < 0){
-             Heavi39 = 0;}
-        K[5] = -alpha*((Yt+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )-betha*((G+h)-Gb))*Heavi38+(-alpha*(Yt+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )-alpha*Sb)*(Heavi39);
-        double Heavi40;
-        if( (betha*((G+h)-Gb)+Sb)  >= 0){
-             Heavi40 = 1;}
-        if( (betha*((G+h)-Gb)+Sb) < 0){
-             Heavi40 = 0;}
-        double Heavi41;
-        if( (-Sb-betha*((G+h)-Gb))  >= 0){
-             Heavi41 = 1;}
-        if( (-Sb-betha*((G+h)-Gb)) < 0){
-             Heavi41 = 0;}
-        K[5] = -alpha*((Yt+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) +11*h*K[5]/84.0)-betha*((G+h)-Gb))*Heavi40+(-alpha*(Yt+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) +11*h*K[5]/84.0)-alpha*Sb)*(Heavi41);
 
-        dYt   = Yt + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = Yt + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
 
         // Решаем dIt через Рунге-Кутта
-        // dIt=k21*Ii-ka*It; // tissue insulin, pmol
-        // dIt = f(It,Ii)?
-        K[0] = k21*Ii-ka*It;
-        K[1] = k21*(Ii+ h/2.0)-ka*(It+ h*K[0]/2.0);
-        K[2] = k21*(Ii+ h/2.0)-ka*(It+ h*K[1]/2.0);
-        K[3] = k21*(Ii+ h)-ka*(It+ h*K[2]);
+        // dIt=Kvect.at(8)*Ii-Kvect.at(10)*It;
+        // dIt = f(Ii,It)?
+        K[0] = Kvect.at(8)*Ii-Kvect.at(10)*It;
+        K[1] = Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[0]/2.0);
+        K[2] = Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[1]/2.0);
+        K[3] = Kvect.at(8)*(Ii+ h)-Kvect.at(10)*(It+ h*K[2]);
+
         dIt   = It + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
-        // Решение dIt через Дормана-Принса
+        // Решение dfsol через Дормана-Принса
 /*
-        K[0] = k21*Ii-ka*It;
-        K[1] = k21*(Ii+ h/5.0)-ka*(It+ h*K[0]/5.0);
-        K[2] = k21*(Ii+ 3*h/10.0)-ka*(It+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0);
-        K[3] = k21*(Ii+ 4*h/5.0)-ka*(It+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0);
-        K[4] = k21*(Ii+ 8*h/9.0)-ka*(It+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) );
-        K[5] = k21*(Ii+ h)-ka*(It+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) );
-        K[6] = k21*(Ii+ h)-ka*(It+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0);
 
-        dIt   = It + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = It + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
-
 
         // Решаем dIi через Рунге-Кутта
-        // dIi=-k21*Ii+vbas+vbol;   // interstitial insulin, pmol
-        // dIi = f(It,vbol)?
-        K[0] = -k21*Ii+vbas+vbol;
-        K[1] = -k21*(Ii+ h*K[0]/2.0)+vbas+(vbol+ h/2.0);
-        K[2] = -k21*(Ii+ h*K[1]/2.0)+vbas+(vbol+ h/2.0);
-        K[3] = -k21*(Ii+ h*K[2])+vbas+(vbol+ h);
+        // dIi=-Kvect.at(8)*Ii+vbas+vbol;
+        // dIi = f(vbol,Ii)?
+        K[0] = -Kvect.at(8)*Ii+vbas+vbol;
+        K[1] = -Kvect.at(8)*(Ii+ h*K[0]/2.0)+vbas+(vbol+ h/2.0);
+        K[2] = -Kvect.at(8)*(Ii+ h*K[1]/2.0)+vbas+(vbol+ h/2.0);
+        K[3] = -Kvect.at(8)*(Ii+ h*K[2])+vbas+(vbol+ h);
+
         dIi   = Ii + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
 
-        // Решение dIi через Дормана-Принса
+        // Решение dfsol через Дормана-Принса
 /*
-        K[0] = -k21*Ii+vbas+vbol;
-        K[1] = -k21*(Ii+ h*K[0]/5.0)+vbas+(vbol+ h/5.0);
-        K[2] = -k21*(Ii+ 3*h*K[0]/40.0 + 9*h*K[1]/40.0)+vbas+(vbol+ 3*h/10.0);
-        K[3] = -k21*(Ii+ 44*h*K[0]/45.0 + (-56*h*K[1]/15.0) + 32*h*K[2]/9.0)+vbas+(vbol+ 4*h/5.0);
-        K[4] = -k21*(Ii+ 19372*h*K[0]/6561.0 + (-25360*h*K[1]/2187.0) + 64448*h*K[2]/6561.0 + (-212*h*K[3]/729.0) )+vbas+(vbol+ 8*h/9.0);
-        K[5] = -k21*(Ii+ 9017*h*K[0]/3168.0 + (-355*h*K[1]/33.0) + 46732*h*K[2]/5247.0 + (49*h*K[3]/176.0) + (-5103*h*K[4]/18656.0) )+vbas+(vbol+ h);
-        K[5] = -k21*(Ii+ 35*h*K[0]/384.0 + 500*h*K[2]/1113.0 + (125*h*K[3]/192.0) + (-2187*h*K[4]/6784.0) + 11*h*K[5]/84.0)+vbas+(vbol+ h);
 
-        dIi   = Ii + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0)*h; // во многих источниках домножается на h, но в одном нету такого.
-        // fx = Ii + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0)*h; // Альтернативное решение(при вычитании из первого решения даёт оценку ошибки) Мб надо для расчёта шага? Пока не знаю
 */
-
-        /* */
 
         // присвоение конечных значений в начальные
         DataZ currentValues;
@@ -833,17 +687,35 @@ MainWindow::MainWindow(QWidget *parent)
         fliq = dfliq;
         fsol = dfsol;
 
-        currentTime += h;
+        h1 = hopt1;
+        h2 = hopt2;
+        h3 = hopt3;
+        h4 = hopt4;
+        h5 = hopt5;
+        h6 = hopt6;
+        h7 = hopt7;
+        h8 = hopt8;
+        h9 = hopt9;
+        h10 = hopt10;
+        h11 = hopt11;
+        h12 = hopt12;
+        h13 = hopt13;
+        h14 = hopt14;
+
+        currentTime += step;
+        t = currentTime; // увеличиваем время
+
     }
 
     QVector<double> tick;
     QVector<double> CGB;
     QVector<double> Ipg;
+
     for (DataZ dt : data)       // чтение и выгрузка нуэных результов из структуры
     {
         cout << dt.t << "\t" <<  dt.gp/1.8 << "\t" <<  dt.Ip*20 << "\t" << endl;
         tick.append(dt.t);
-        CGB.append(dt.gp/1.8);
+        CGB.append(dt.gp/Kvect.at(23));
         Ipg.append(dt.Ip*20);
     }
 

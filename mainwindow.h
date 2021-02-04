@@ -13,7 +13,9 @@ extern double t;
 // Initial values & variables
 extern double Dig;
 extern double ti1;
-extern double Dbol;
+extern double Dbol1;      // доза болюса начальная
+extern double Dbol2;      // доза болюса начальная
+extern double Dbol3;      // доза болюса начальная
 extern double Vbas;
 extern double mt;
 extern double kp1;  // mg/kg/min
@@ -30,6 +32,8 @@ extern double tm1; // tm
 extern double Ti1;
 extern double Ti2;
 extern double ti2;
+extern double Ti3;
+extern double ti3;
 extern double tms;
 extern double Tm;
 extern double Vg;
