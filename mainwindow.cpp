@@ -727,12 +727,11 @@ MainWindow::MainWindow(QWidget *parent)
     QPen pen0(Qt::black);
     pen0.setWidth(3);
     ui->customPlot->xAxis->setAutoTickStep(true);
-    ui->customPlot->xAxis->setTickLabelType(QCPAxis::ltDateTime);           // Подпись координат по Оси X в качестве Даты и Времени
-    ui->customPlot->xAxis->setDateTimeFormat("hh:mm:ss");
     ui->customPlot->graph(0)->setPen(pen0);
     ui->customPlot->graph(0)->setLineStyle(QCPGraph::lsLine);               // График в виде чего-то там стиль линий
 
-    ui->customPlot->setInteraction(QCP::iRangeDrag, false);                 // Отключаем взаимодействие перетаскивания графика
+    ui->customPlot->setInteraction(QCP::iRangeDrag, true);                 // Отключаем взаимодействие перетаскивания графика
+    ui->customPlot->setInteraction(QCP::iRangeZoom,true);
     ui->customPlot->addGraph();
     QPen pen3(Qt::blue);
     pen3.setWidth(5);                                                       // установить нужную толщину
