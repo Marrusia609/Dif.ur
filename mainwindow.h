@@ -17,16 +17,10 @@ extern double Dbol1;      // доза болюса начальная
 extern double Dbol2;      // доза болюса начальная
 extern double Dbol3;      // доза болюса начальная
 extern double Vbas;
-extern double mt;
-extern double kp1;  // mg/kg/min
 extern double g0;   // plasma glucose, mg/kg START gp?
 extern double gt0;  // tissue glucose, mg/kg  START
 extern double Ip0;  // portal vein insulin, pmol/kg START
-extern double b;
-extern double c;
-extern double Fcns;
 extern double m2;
-extern double Vmxx; // mg/kg/min per pmol/l   insulin sens
 extern double del;
 extern double tm1; // tm
 extern double Ti1;
