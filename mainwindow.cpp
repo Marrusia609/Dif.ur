@@ -37,7 +37,7 @@ double Vg = 1.8;        // plasma per BW, dl/kg +
 double m2 = 90;         // + М ?
 
 /* Разные названия переменных с начальным массивом Z ? */
-double g0 = 0;           // gp?
+double g0 = 122.00;           // gp?
 double gt0 = 169.72;     // +
 double Ip0 = 3.08; //5.2040;      // 0.15??  +
 
@@ -80,25 +80,25 @@ MainWindow::MainWindow(QWidget *parent)
 
     double  a = 0.0,    // начальное время
             b = 720.0;    // конечное время
-    double  step = 5;   // шаг НЕ ШАГ)) периодичность!
+    double  step = 0.25;   // шаг НЕ ШАГ)) периодичность!
 
 
     vector<DataZ> data;
     DataZ start;
     start.t = a;
 
-    int stepCount = (b / step) + 1;
-    double currentTime = a + step;
-
     double K[7];
     double dz;
     double err;
     double s;
 
-    // убрал домножение на шаг в следуещей точке
-    double h = 1.5;
+    double h = 0.5;
     double hmin = 0.01;
-    double hmax = 1.5;
+    double hmax = 1;
+
+    int stepCount = (b / h) + 1;
+    double currentTime = a + step;
+
     double eps=0.000001; //error allowance in one step calculation.
     double h1 = h;
     double h2 = h;
@@ -156,16 +156,16 @@ MainWindow::MainWindow(QWidget *parent)
     g0 = Ginit*1.8;                 // +
     start.gp = g0;                  // +
     start.Il = 2.61;                // +
-    start.Ip = 5.2040;                 //55.12/20 +
-    start.fgut = 0;                 // mg +
-    start.fliq = 0;                 // mg +
-    start.fsol = 0;                 // mg +
+    start.Ip = 5.2040;              //55.12/20 +
+    start.fgut = 0.001;                 // mg +
+    start.fliq = 0.001;                 // mg +
+    start.fsol = 0.001;                 // mg +
     start.gt = gt0;                 // +
     start.I1 = 104.08;              // +
     start.Id = 104.08;              // +
-    start.Xt = 0;                   // +
+    start.Xt = 0.001;                   // +
     start.Ipo = 3.08;               // +
-    start.Yt = 0;                   // +
+    start.Yt = 0.001;                   // +
     start.Ii = 4120;                // +
     start.It = 10830;               // +
     data.push_back(start);
@@ -211,14 +211,11 @@ MainWindow::MainWindow(QWidget *parent)
     double Ii = start.Ii;
     /*************************************************                      Цикл решения ДУ                   ********************************************************/
 
-    for (int j = 1; j <= stepCount; j++)
+    for (double j = 1; j <= stepCount; j++)
     {
-
-        //hmin = 16*eps*t;
         /* */
         // Fluctuations
         vbas=Vbas*100; // pmol/min
-        //точки из матлаб убрал в последующих двух уравнениях после второй скобки множителя
         bol1=1/Ti1*Dbol1*(1./(1+exp(-3*(t+10-ti1))))*(1./(1+exp(-3*(-10+ti1-t+Ti1))));
         bol2=1/Ti2*Dbol2*(1./(1+exp(-3*(t+10-ti2))))*(1./(1+exp(-3*(-10+ti2-t+Ti2))));
         bol3=1/Ti3*Dbol3*(1./(1+exp(-3*(t+10-ti3))))*(1./(1+exp(-3*(-10+ti3-t+Ti3))));
@@ -247,7 +244,7 @@ MainWindow::MainWindow(QWidget *parent)
 //        if( (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo) < 0){
 //             Heavi3 = 0;}
 
-//        K[0] = (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt;
+//        K[0] = h*((Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt);
 
 //        if( ((gp+ h*K[0]/2.0)-Kvect.at(32))>= 0){
 //             Heavi1 = 1;}
@@ -257,7 +254,7 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi3 = 1;}
 //        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
 //             Heavi3 = 0;}
-//        K[1] = (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[0]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[0]/2.0)+Kvect.at(25)*(gt+ h/2.0);
+//        K[1] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[0]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[0]/2.0)+Kvect.at(25)*(gt+ h/2.0));
 
 //        if( ((gp+ h*K[1]/2.0)-Kvect.at(32))>= 0){
 //             Heavi1 = 1;}
@@ -267,7 +264,7 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi3 = 1;}
 //        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
 //             Heavi3 = 0;}
-//        K[2] = (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[1]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[1]/2.0)+Kvect.at(25)*(gt+ h/2.0);
+//        K[2] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[1]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[1]/2.0)+Kvect.at(25)*(gt+ h/2.0));
 
 //        if( ((gp+ h*K[2])-Kvect.at(32))>= 0){
 //             Heavi1 = 1;}
@@ -277,9 +274,9 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi3 = 1;}
 //        if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h)) < 0){
 //             Heavi3 = 0;}
-//        K[3] = (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[2])-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[2])+Kvect.at(25)*(gt+ h);
+//        K[3] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[2])-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[2])+Kvect.at(25)*(gt+ h));
 
-//        dgp   = gp + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dgp   = gp + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dgp через Дормана-Принса
 
@@ -362,19 +359,19 @@ MainWindow::MainWindow(QWidget *parent)
         err = abs(dz-dgp);
         s = pow(eps*h1/(2*err),1/5);
         hopt1 = s*h1;
-        if( hopt1 < hmin) hopt1 = hmin;
-        else if(hopt1 > hmax) hopt1 = hmax;
+        if( hopt1 < hmin) { hopt1 = hmin;}
+        else{ if(hopt1 > hmax) {hopt1 = hmax;}}
 
         // Решаем dgt через Рунге-Кутта
 
         // dgt=-((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt;
         // dgt = f(Xt,gp,gt)
 
-//        K[0] = -((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt;
-//        K[1] = -((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[0]/2.0))/(Kvect.at(29)+(gt + h*K[0]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[0]/2.0);
-//        K[2] = -((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[1]/2.0))/(Kvect.at(29)+(gt + h*K[1]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[1]/2.0);
-//        K[3] = -((Kvect.at(27)+Kvect.at(28)*(Xt + h))*(gt + h*K[2]))/(Kvect.at(29)+(gt + h*K[2]))+Kvect.at(24)*(gp + h)-Kvect.at(25)*(gt + h*K[2]);
-//        dgt   = gt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        K[0] = h*(-((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt);
+//        K[1] = h*(-((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[0]/2.0))/(Kvect.at(29)+(gt + h*K[0]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[0]/2.0));
+//        K[2] = h*(-((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[1]/2.0))/(Kvect.at(29)+(gt + h*K[1]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[1]/2.0));
+//        K[3] = h*(-((Kvect.at(27)+Kvect.at(28)*(Xt + h))*(gt + h*K[2]))/(Kvect.at(29)+(gt + h*K[2]))+Kvect.at(24)*(gp + h)-Kvect.at(25)*(gt + h*K[2]));
+//        dgt   = gt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dgt через Дормана-Принса
 
@@ -388,7 +385,7 @@ MainWindow::MainWindow(QWidget *parent)
 
         dgt = gt + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);     // во многих источниках домножается на h, но в одном нету такого.
         dz = gt + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
-        err = abs(dz-dgp);
+        err = abs(dz-dgt);
         s = pow(eps*h2/(2*err),1/5);
         hopt2 = s*h2;
         if( hopt2 < hmin) hopt2 = hmin;
@@ -399,11 +396,11 @@ MainWindow::MainWindow(QWidget *parent)
         // dI1=-Kvect.at(15)*(I1-Ip/Kvect.at(4));
         // dI1 = f(Ip,I1)
 
-//        K[0] = -Kvect.at(15)*(I1-Ip/Kvect.at(4));
-//        K[1] = -Kvect.at(15)*((I1 + h*K[0]/2.0)-(Ip+ h/2.0)/Kvect.at(4));
-//        K[2] = -Kvect.at(15)*((I1 + h*K[1]/2.0)-(Ip+ h/2.0)/Kvect.at(4));
-//        K[3] = -Kvect.at(15)*((I1 + h*K[2])-(Ip+ h)/Kvect.at(4));
-//        dI1   = I1 + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        K[0] = h*(-Kvect.at(15)*(I1-Ip/Kvect.at(4)));
+//        K[1] = h*(-Kvect.at(15)*((I1 + h*K[0]/2.0)-(Ip+ h/2.0)/Kvect.at(4)));
+//        K[2] = h*(-Kvect.at(15)*((I1 + h*K[1]/2.0)-(Ip+ h/2.0)/Kvect.at(4)));
+//        K[3] = h*(-Kvect.at(15)*((I1 + h*K[2])-(Ip+ h)/Kvect.at(4)));
+//        dI1   = I1 + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dI1 через Дормана-Принса
 
@@ -426,11 +423,11 @@ MainWindow::MainWindow(QWidget *parent)
         // Решаем dId через Рунге-Кутта
         // dId=-Kvect.at(15)*(Id-I1);
         // dId = f(I1,Id)?
-//        K[0] = -Kvect.at(15)*(Id-I1);
-//        K[1] = -Kvect.at(15)*((Id + h*K[0]/2.0)-(I1+h/2.0));
-//        K[2] = -Kvect.at(15)*((Id + h*K[1]/2.0)-(I1+h/2.0));
-//        K[3] = -Kvect.at(15)*((Id + h*K[2])-(I1+h));
-//        dId   = Id + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        K[0] = h*(-Kvect.at(15)*(Id-I1));
+//        K[1] = h*(-Kvect.at(15)*((Id + h*K[0]/2.0)-(I1+h/2.0)));
+//        K[2] = h*(-Kvect.at(15)*((Id + h*K[1]/2.0)-(I1+h/2.0)));
+//        K[3] = h*(-Kvect.at(15)*((Id + h*K[2])-(I1+h)));
+//        dId   = Id + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dId через Дормана-Принса
 
@@ -459,27 +456,27 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi2 = 1;}
 //        if( ((Ip/Kvect.at(4))-Kvect.at(1)) < 0){
 //             Heavi2 = 0;}
-//        K[0] = -Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2;
+//        K[0] = h*(-Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2);
 
 //        if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
 //             Heavi2 = 1;}
 //        if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) < 0){
 //             Heavi2 = 0;}
-//        K[1] = -Kvect.at(30)*(Xt+ h*K[0]/2.0)+Kvect.at(30)*(((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1))*Heavi2;
+//        K[1] = h*(-Kvect.at(30)*(Xt+ h*K[0]/2.0)+Kvect.at(30)*(((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1))*Heavi2);
 
 //        if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
 //             Heavi2 = 1;}
 //        if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) < 0){
 //             Heavi2 = 0;}
-//        K[2] = -Kvect.at(30)*(Xt + h*K[1]/2.0)+Kvect.at(30)*(((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1))*Heavi2;
+//        K[2] = h*(-Kvect.at(30)*(Xt + h*K[1]/2.0)+Kvect.at(30)*(((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1))*Heavi2);
 
 //        if( (((Ip+ h)/Kvect.at(4))-Kvect.at(1)) >= 0){
 //             Heavi2 = 1;}
 //        if( (((Ip+ h)/Kvect.at(4))-Kvect.at(1)) < 0){
 //             Heavi2 = 0;}
-//        K[3] = -Kvect.at(30)*(Xt+ h*K[2])+Kvect.at(30)*(((Ip+ h)/Kvect.at(4))-Kvect.at(1))*Heavi2;
+//        K[3] = h*(-Kvect.at(30)*(Xt+ h*K[2])+Kvect.at(30)*(((Ip+ h)/Kvect.at(4))-Kvect.at(1))*Heavi2);
 
-//        dXt   = Xt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dXt   = Xt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dXt через Дормана-Принса
 
@@ -539,12 +536,12 @@ MainWindow::MainWindow(QWidget *parent)
         // dIl=-(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip;
         // dIl = f(Ip,Il)?
 
-//        K[0] = -(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip;
-//        K[1] = -(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[0]/2.0)+Kvect.at(6)*(Ip+ h/2.0);
-//        K[2] = -(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[1]/2.0)+Kvect.at(6)*(Ip+ h/2.0);
-//        K[3] = -(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[2])+Kvect.at(6)*(Ip+ h);
+//        K[0] = h*(-(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip);
+//        K[1] = h*(-(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[0]/2.0)+Kvect.at(6)*(Ip+ h/2.0));
+//        K[2] = h*(-(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[1]/2.0)+Kvect.at(6)*(Ip+ h/2.0));
+//        K[3] = h*(-(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[2])+Kvect.at(6)*(Ip+ h));
 
-//        dIl   = Il + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dIl   = Il + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dIl через Дормана-Принса
 
@@ -567,12 +564,12 @@ MainWindow::MainWindow(QWidget *parent)
         // Решаем dIp через Рунге-Кутта
         // dIp=-Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip;
         // dIp = f(Il,It,Ip)?
-//        K[0] = -Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip;
-//        K[1] = -Kvect.at(6)*(Ip+ h*K[0]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[0]/2.0);
-//        K[2] = -Kvect.at(6)*(Ip+ h*K[1]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[1]/2.0);
-//        K[3] = -Kvect.at(6)*(Ip+ h*K[2])+Kvect.at(5)*(Il+ h)+Kvect.at(10)/Kvect.at(0)*(It+ h)-Kvect.at(9)*(Ip+ h*K[2]);
+//        K[0] = h*(-Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip);
+//        K[1] = h*(-Kvect.at(6)*(Ip+ h*K[0]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[0]/2.0));
+//        K[2] = h*(-Kvect.at(6)*(Ip+ h*K[1]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[1]/2.0));
+//        K[3] = h*(-Kvect.at(6)*(Ip+ h*K[2])+Kvect.at(5)*(Il+ h)+Kvect.at(10)/Kvect.at(0)*(It+ h)-Kvect.at(9)*(Ip+ h*K[2]));
 
-//        dIp   = Ip + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dIp   = Ip + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dIp через Дормана-Принса
 
@@ -599,12 +596,12 @@ MainWindow::MainWindow(QWidget *parent)
 //        double kgut;
 //        kgut=Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2);
 
-//        K[0] = -Kvect.at(17)*fgut+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2)*fliq;
-//        K[1] = -Kvect.at(17)*(fgut+ h*K[0]/2.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(22)*Dig))+2)*(fliq+ h/2.0);
-//        K[2] = -Kvect.at(17)*(fgut+ h*K[1]/2.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(22)*Dig))+2)*(fliq+ h/2.0);
-//        K[3] = -Kvect.at(17)*(fgut+ h*K[2])+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h)+(fliq+ h)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h)+(fliq+ h)-Kvect.at(22)*Dig))+2)*(fliq+ h);
+//        K[0] = h*(-Kvect.at(17)*fgut+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2)*fliq);
+//        K[1] = h*(-Kvect.at(17)*(fgut+ h*K[0]/2.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(22)*Dig))+2)*(fliq+ h/2.0));
+//        K[2] = h*(-Kvect.at(17)*(fgut+ h*K[1]/2.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(22)*Dig))+2)*(fliq+ h/2.0));
+//        K[3] = h*(-Kvect.at(17)*(fgut+ h*K[2])+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h)+(fliq+ h)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h)+(fliq+ h)-Kvect.at(22)*Dig))+2)*(fliq+ h));
 
-//        dfgut   = fgut + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dfgut   = fgut + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dfgut через Дормана-Принса
 
@@ -628,12 +625,12 @@ MainWindow::MainWindow(QWidget *parent)
         // dfliq=-kgut*fliq+Kvect.at(18)*fsol;
         // dfliq = f(fliq,fsol)?
 
-//        K[0] = -(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2))*fliq+Kvect.at(18)*fsol;
-//        K[1] = -(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[0]/2.0)+Kvect.at(18)*(fsol+ h/2.0);
-//        K[2] = -(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[1]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[1]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[1]/2.0)+Kvect.at(18)*(fsol+ h/2.0);
-//        K[2] = -(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h)+(fliq+ h*K[2])-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h)+(fliq+ h*K[2])-Kvect.at(22)*Dig))+2))*(fliq+ h*K[2])+Kvect.at(18)*(fsol+ h);
+//        K[0] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2))*fliq+Kvect.at(18)*fsol);
+//        K[1] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[0]/2.0)+Kvect.at(18)*(fsol+ h/2.0));
+//        K[2] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[1]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[1]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[1]/2.0)+Kvect.at(18)*(fsol+ h/2.0));
+//        K[2] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h)+(fliq+ h*K[2])-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h)+(fliq+ h*K[2])-Kvect.at(22)*Dig))+2))*(fliq+ h*K[2])+Kvect.at(18)*(fsol+ h));
 
-//        dfliq   = fliq + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dfliq   = fliq + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dfliq через Дормана-Принса
 
@@ -657,12 +654,12 @@ MainWindow::MainWindow(QWidget *parent)
         // dfsol=-Kvect.at(18)*fsol+vm;
         // dfsol = f(fsol,vm)?
 
-//        K[0] = -Kvect.at(18)*fsol+vm;
-//        K[1] = -Kvect.at(18)*(fsol+ h*K[0]/2.0)+(vm+ h/2.0);
-//        K[2] = -Kvect.at(18)*(fsol+ h*K[1]/2.0)+(vm+ h/2.0);
-//        K[3] = -Kvect.at(18)*(fsol+ h*K[2])+(vm+ h);
+//        K[0] = h*(-Kvect.at(18)*fsol+vm);
+//        K[1] = h*(-Kvect.at(18)*(fsol+ h*K[0]/2.0)+(vm+ h/2.0));
+//        K[2] = h*(-Kvect.at(18)*(fsol+ h*K[1]/2.0)+(vm+ h/2.0));
+//        K[3] = h*(-Kvect.at(18)*(fsol+ h*K[2])+(vm+ h));
 
-//        dfsol   = fsol + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dfsol   = fsol + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dfsol через Дормана-Принса
 
@@ -697,7 +694,7 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi6 = 1;}
 //        if( (-dgp) < 0){
 //             Heavi6 = 0;}
-//        K[0] = -Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6);
+//        K[0] = h*(-Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6));
 
 //        if( ((dgp+ h/2.0)) >= 0){
 //             Heavi5 = 1;}
@@ -708,7 +705,7 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi6 = 1;}
 //        if( (-(dgp+ h/2.0)) < 0){
 //             Heavi6 = 0;}
-//        K[1] = -Kvect.at(33)*(Ipo+ h*K[0]/2.0)+((Yt+ h/2.0)+Kvect.at(3))*Heavi5+((Yt+ h/2.0)+Kvect.at(3))*(Heavi6);
+//        K[1] = h*(-Kvect.at(33)*(Ipo+ h*K[0]/2.0)+((Yt+ h/2.0)+Kvect.at(3))*Heavi5+((Yt+ h/2.0)+Kvect.at(3))*(Heavi6));
 
 //        if( ((dgp+ h/2.0)) >= 0){
 //             Heavi5 = 1;}
@@ -719,7 +716,7 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi6 = 1;}
 //        if( (-(dgp+ h/2.0)) < 0){
 //             Heavi6 = 0;}
-//        K[2] = -Kvect.at(33)*(Ipo+ h*K[1]/2.0)+((Yt+ h/2.0)+Kvect.at(3))*Heavi5+((Yt+ h/2.0)+Kvect.at(3))*(Heavi6);
+//        K[2] = h*(-Kvect.at(33)*(Ipo+ h*K[1]/2.0)+((Yt+ h/2.0)+Kvect.at(3))*Heavi5+((Yt+ h/2.0)+Kvect.at(3))*(Heavi6));
 
 //        if( ((dgp+ h)) >= 0){
 //             Heavi5 = 1;}
@@ -730,9 +727,9 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi6 = 1;}
 //        if( (-(dgp+ h)) < 0){
 //             Heavi6 = 0;}
-//        K[3] = -Kvect.at(33)*(Ipo+ h*K[2])+((Yt+ h)+Kvect.at(3))*Heavi5+((Yt+ h)+Kvect.at(3))*(Heavi6);
+//        K[3] = h*(-Kvect.at(33)*(Ipo+ h*K[2])+((Yt+ h)+Kvect.at(3))*Heavi5+((Yt+ h)+Kvect.at(3))*(Heavi6));
 
-//        dIpo   = Ipo + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dIpo   = Ipo + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dIpo через Дормана-Принса
 
@@ -750,70 +747,70 @@ MainWindow::MainWindow(QWidget *parent)
              Heavi6 = 0;}
         K[0] = h11*(-Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6));
 
-        if( ((dgp+ h11/5.0)) >= 0){
-             Heavi5 = 1;}
-        if( ((dgp+ h11/5.0)) < 0){
-             Heavi5 = 0;}
+//        if( ((dgp+ h11/5.0)) >= 0){
+//             Heavi5 = 1;}
+//        if( ((dgp+ h11/5.0)) < 0){
+//             Heavi5 = 0;}
 
-        if( (-(dgp+ h11/5.0)) >= 0){
-             Heavi6 = 1;}
-        if( (-(dgp+ h11/5.0)) < 0){
-             Heavi6 = 0;}
+//        if( (-(dgp+ h11/5.0)) >= 0){
+//             Heavi6 = 1;}
+//        if( (-(dgp+ h11/5.0)) < 0){
+//             Heavi6 = 0;}
         K[1] = h11*(-Kvect.at(33)*(Ipo+ h11*K[0]/5.0)+((Yt+ h11/5.0)+Kvect.at(3))*Heavi5+((Yt+ h11/5.0)+Kvect.at(3))*(Heavi6));
 
-        if( ((dgp+ 3*h11/10.0)) >= 0){
-             Heavi5 = 1;}
-        if( ((dgp+ 3*h11/10.0)) < 0){
-             Heavi5 = 0;}
+//        if( ((dgp+ 3*h11/10.0)) >= 0){
+//             Heavi5 = 1;}
+//        if( ((dgp+ 3*h11/10.0)) < 0){
+//             Heavi5 = 0;}
 
-        if( (-(dgp+ 3*h11/10.0)) >= 0){
-             Heavi6 = 1;}
-        if( (-(dgp+ 3*h11/10.0)) < 0){
-             Heavi6 = 0;}
+//        if( (-(dgp+ 3*h11/10.0)) >= 0){
+//             Heavi6 = 1;}
+//        if( (-(dgp+ 3*h11/10.0)) < 0){
+//             Heavi6 = 0;}
         K[2] = h11*(-Kvect.at(33)*(Ipo+ 3*h11*K[0]/40.0 + 9*h11*K[1]/40.0)+((Yt+ 3*h11/10.0)+Kvect.at(3))*Heavi5+((Yt+ 3*h11/10.0)+Kvect.at(3))*(Heavi6));
 
-        if( ((dgp+ 4*h11/5.0)) >= 0){
-             Heavi5 = 1;}
-        if( ((dgp+ 4*h11/5.0)) < 0){
-             Heavi5 = 0;}
+//        if( ((dgp+ 4*h11/5.0)) >= 0){
+//             Heavi5 = 1;}
+//        if( ((dgp+ 4*h11/5.0)) < 0){
+//             Heavi5 = 0;}
 
-        if( (-(dgp+ 4*h11/5.0)) >= 0){
-             Heavi6 = 1;}
-        if( (-(dgp+ 4*h11/5.0)) < 0){
-             Heavi6 = 0;}
+//        if( (-(dgp+ 4*h11/5.0)) >= 0){
+//             Heavi6 = 1;}
+//        if( (-(dgp+ 4*h11/5.0)) < 0){
+//             Heavi6 = 0;}
         K[3] = h11*(-Kvect.at(33)*(Ipo+ 44*h11*K[0]/45.0 + (-56*h11*K[1]/15.0) + 32*h11*K[2]/9.0)+((Yt+ 4*h11/5.0)+Kvect.at(3))*Heavi5+((Yt+ 4*h11/5.0)+Kvect.at(3))*(Heavi6));
 
-        if( ((dgp+ 4*h11/5.0)) >= 0){
-             Heavi5 = 1;}
-        if( ((dgp+ 4*h11/5.0)) < 0){
-             Heavi5 = 0;}
+//        if( ((dgp+ 4*h11/5.0)) >= 0){
+//             Heavi5 = 1;}
+//        if( ((dgp+ 4*h11/5.0)) < 0){
+//             Heavi5 = 0;}
 
-        if( (-(dgp+ 8*h11/9.0)) >= 0){
-             Heavi6 = 1;}
-        if( (-(dgp+ 8*h11/9.0)) < 0){
-             Heavi6 = 0;}
+//        if( (-(dgp+ 8*h11/9.0)) >= 0){
+//             Heavi6 = 1;}
+//        if( (-(dgp+ 8*h11/9.0)) < 0){
+//             Heavi6 = 0;}
         K[4] = h11*(-Kvect.at(33)*(Ipo+ 19372*h11*K[0]/6561.0 + (-25360*h11*K[1]/2187.0) + 64448*h11*K[2]/6561.0 + (-212*h11*K[3]/729.0))+((Yt+ 8*h11/9.0)+Kvect.at(3))*Heavi5+((Yt+ 8*h11/9.0)+Kvect.at(3))*(Heavi6));
 
-        if( ((dgp+ h11)) >= 0){
-             Heavi5 = 1;}
-        if( ((dgp+ h11)) < 0){
-             Heavi5 = 0;}
+//        if( ((dgp+ h11)) >= 0){
+//             Heavi5 = 1;}
+//        if( ((dgp+ h11)) < 0){
+//             Heavi5 = 0;}
 
-        if( (-(dgp+ h11)) >= 0){
-             Heavi6 = 1;}
-        if( (-(dgp+ h11)) < 0){
-             Heavi6 = 0;}
+//        if( (-(dgp+ h11)) >= 0){
+//             Heavi6 = 1;}
+//        if( (-(dgp+ h11)) < 0){
+//             Heavi6 = 0;}
         K[5] = h11*(-Kvect.at(33)*(Ipo+ 9017*h11*K[0]/3168.0 + (-355*h11*K[1]/33.0) + 46732*h11*K[2]/5247.0 + (49*h11*K[3]/176.0) + (-5103*h11*K[4]/18656.0))+((Yt+ h11)+Kvect.at(3))*Heavi5+((Yt+ h11)+Kvect.at(3))*(Heavi6));
 
-        if( ((dgp+ h11)) >= 0){
-             Heavi5 = 1;}
-        if( ((dgp+ h11)) < 0){
-             Heavi5 = 0;}
+//        if( ((dgp+ h11)) >= 0){
+//             Heavi5 = 1;}
+//        if( ((dgp+ h11)) < 0){
+//             Heavi5 = 0;}
 
-        if( (-(dgp+ h11)) >= 0){
-             Heavi6 = 1;}
-        if( (-(dgp+ h11)) < 0){
-             Heavi6 = 0;}
+//        if( (-(dgp+ h11)) >= 0){
+//             Heavi6 = 1;}
+//        if( (-(dgp+ h11)) < 0){
+//             Heavi6 = 0;}
         K[6] = h11*(-Kvect.at(33)*(Ipo+ 35*h11*K[0]/384.0 + 500*h11*K[2]/1113.0 + (125*h11*K[3]/192.0) + (-2187*h11*K[4]/6784.0) + 11*h11*K[5]/84.0)+((Yt+ h11)+Kvect.at(3))*Heavi5+((Yt+ h11)+Kvect.at(3))*(Heavi6));
 
         dIpo   = Ipo + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
@@ -840,7 +837,7 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi8 = 1;}
 //        if( (-Kvect.at(3)-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))) < 0){
 //             Heavi8 = 0;}
-//        K[0] = -Kvect.at(34)*(Yt-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*Yt-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+//        K[0] = h*(-Kvect.at(34)*(Yt-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*Yt-Kvect.at(34)*Kvect.at(3))*(Heavi8));
 
 //        if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
 //             Heavi7 = 1;}
@@ -851,7 +848,7 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi8 = 1;}
 //        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) < 0){
 //             Heavi8 = 0;}
-//        K[1] = -Kvect.at(34)*((Yt+ h*K[0]/2.0)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[0]/2.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+//        K[1] = h*(-Kvect.at(34)*((Yt+ h*K[0]/2.0)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[0]/2.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8));
 
 //        if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
 //             Heavi7 = 1;}
@@ -862,7 +859,7 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi8 = 1;}
 //        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) < 0){
 //             Heavi8 = 0;}
-//        K[2] = -Kvect.at(34)*((Yt+ h*K[1]/2.0)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[1]/2.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+//        K[2] = h*(-Kvect.at(34)*((Yt+ h*K[1]/2.0)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[1]/2.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8));
 
 //        if( (Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
 //             Heavi7 = 1;}
@@ -873,9 +870,9 @@ MainWindow::MainWindow(QWidget *parent)
 //             Heavi8 = 1;}
 //        if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))) < 0){
 //             Heavi8 = 0;}
-//        K[3] = -Kvect.at(34)*((Yt+ h*K[2])-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[2])-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+//        K[3] = h*(-Kvect.at(34)*((Yt+ h*K[2])-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[2])-Kvect.at(34)*Kvect.at(3))*(Heavi8));
 
-//        dYt   = Yt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dYt   = Yt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dYt через Дормана-Принса
 
@@ -970,12 +967,12 @@ MainWindow::MainWindow(QWidget *parent)
         // Решаем dIt через Рунге-Кутта
         // dIt=Kvect.at(8)*Ii-Kvect.at(10)*It;
         // dIt = f(Ii,It)?
-//        K[0] = Kvect.at(8)*Ii-Kvect.at(10)*It;
-//        K[1] = Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[0]/2.0);
-//        K[2] = Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[1]/2.0);
-//        K[3] = Kvect.at(8)*(Ii+ h)-Kvect.at(10)*(It+ h*K[2]);
+//        K[0] = h*(Kvect.at(8)*Ii-Kvect.at(10)*It);
+//        K[1] = h*(Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[0]/2.0));
+//        K[2] = h*(Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[1]/2.0));
+//        K[3] = h*(Kvect.at(8)*(Ii+ h)-Kvect.at(10)*(It+ h*K[2]));
 
-//        dIt   = It + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dIt   = It + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dIt через Дормана-Принса
 
@@ -998,12 +995,12 @@ MainWindow::MainWindow(QWidget *parent)
         // Решаем dIi через Рунге-Кутта
         // dIi=-Kvect.at(8)*Ii+vbas+vbol;
         // dIi = f(vbol,Ii,vbas)?
-//        K[0] = -Kvect.at(8)*Ii+vbas+vbol;
-//        K[1] = -Kvect.at(8)*(Ii+ h*K[0]/2.0)+(vbas+ h/2.0)+(vbol+ h/2.0);
-//        K[2] = -Kvect.at(8)*(Ii+ h*K[1]/2.0)+(vbas+ h/2.0)+(vbol+ h/2.0);
-//        K[3] = -Kvect.at(8)*(Ii+ h*K[2])+(vbas+ h)+(vbol+ h);
+//        K[0] = h*(-Kvect.at(8)*Ii+vbas+vbol);
+//        K[1] = h*(-Kvect.at(8)*(Ii+ h*K[0]/2.0)+(vbas+ h/2.0)+(vbol+ h/2.0));
+//        K[2] = h*(-Kvect.at(8)*(Ii+ h*K[1]/2.0)+(vbas+ h/2.0)+(vbol+ h/2.0));
+//        K[3] = h*(-Kvect.at(8)*(Ii+ h*K[2])+(vbas+ h)+(vbol+ h));
 
-//        dIi   = Ii + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0 *h;
+//        dIi   = Ii + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
         // Решение dIi через Дормана-Принса
 
@@ -1123,6 +1120,8 @@ MainWindow::MainWindow(QWidget *parent)
     QVector<double> tick;
     QVector<double> CGB;
     QVector<double> Ipg;
+    QVector<double> cgbMatlab;
+    QVector<double> insMatlab;
 
     for (DataZ dt : data)       // чтение и выгрузка нуэных результов из структуры
     {
@@ -1139,8 +1138,47 @@ MainWindow::MainWindow(QWidget *parent)
 
     // to do:                                               выгрузить с матлаб графики и сравнить их
 
+//    QFile fileMat("D:/Qt/pr/untitled/Dif.ur/matlab/");
+//    if (!fileMat.open(QFile::ReadOnly)){
+//        qDebug() << "File not exists";
+//    }
+//    else{
+
+//        in.setDevice(&file);
+//        double tr=0;                        // переменные для записи данных из csv файла в разные массивы
+//        double tvc=0;
+
+//        while( !in.atEnd()){
+//                QString read = in.readLine();
+
+//                ind=read.indexOf("\n");
+//                tr=read.left(ind).toDouble();
+//                cgbMatlab.append(tr);                // массив времени
+//                read.remove(0,ind+1);
+//        }
+//    fileMat.close();
+//    QFile file(tgk);
+//    if (!file.open(QFile::ReadOnly)){
+//        qDebug() << "File not exists";
+//    }
+//    else{
+
+//        in.setDevice(&file);
+//        double tr=0;                        // переменные для записи данных из csv файла в разные массивы
+//        double tvc=0;
+
+//        while( !in.atEnd()){
+//                QString read = in.readLine();
+
+//                ind=read.indexOf("\n");
+//                tr=read.left(ind).toDouble();
+//                insMatlab.append(tr);                // массив времени
+//                read.remove(0,ind+1);
+//        }
+//    file.close();
+
     ui->customPlot->addGraph();
-    QPen pen0(Qt::black);
+    QPen pen0(Qt::green);
     pen0.setWidth(3);
     ui->customPlot->xAxis->setAutoTickStep(true);
     ui->customPlot->graph(0)->setPen(pen0);
@@ -1163,6 +1201,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->customPlot->graph(0)->setData(tick ,CGB);
     ui->customPlot->graph(1)->setData(tick ,Ipg);
     ui->customPlot->graph(2)->setData(tick ,grafVbas);
+    //ui->customPlot->graph(3)->setData(tick ,cgbMatlab);
+
     ui->customPlot->rescaleAxes();
     ui->customPlot->replot();
 }

@@ -80,3 +80,5 @@ Ipr=[IP(2:end) ; IP(end,1)*20];
 plot(1:720,Gpr,'g');
 plot(1:720,IP,'b');
 grid on
+csvwrite('progMatExplDate1.csv',GG);
+csvwrite('progMatExplDate2.csv',IP);
