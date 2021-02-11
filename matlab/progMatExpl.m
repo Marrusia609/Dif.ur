@@ -63,7 +63,7 @@ for i=1:(length(time)-1)
     [t,G] = ode45(@ProgODE, tspan, y0);
     y0=G(end,:);
     GG =[GG ; G(1:end-1,1)/k(24)];
-    IP =[IP ; G(1:end-1,2)*20];
+    IP =[IP ; G(1:end-1,3)*20];
     if (time1<t1) || (time1>t2)
         Vbas=basalCalc2(G(end,1)/k(24));
     else
