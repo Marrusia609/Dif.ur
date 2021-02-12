@@ -7,17 +7,17 @@
 #include "qcustomplot.h"
 
 using namespace std;
-                        // + значит что значение перенесено с новых файлов
+
 double t = 0.0;         // время начинается с нуля
 
     /* meal data */
-double tm1 = 60; // tm  // время приёма пищи  +
-double Tm = 20;         // длительность приёма пищи +
-double Dig = 0;     // масса углеводов начальная
+double tm1 = 60; // tm  // время приёма пищи
+double Tm = 20;         // длительность приёма пищи
+double Dig = 0;         // масса углеводов начальная
 
     /* bolus */
-double Ti1 = 10;        // наверное?
-double Ti2 = 10;        // что из этого длительность ввода а что время ввода
+double Ti1 = 10;
+double Ti2 = 10;
 double ti2 = 60;
 double ti1 = 30;
 double Ti3 = 10;
@@ -31,9 +31,7 @@ double Dbol3 = 0;      // доза болюса начальная
 
     /* bazal ins */
 double Vbas = 1.2238;   // доза базального инсулина  +
-
-double Vg = 1.2238;        // plasma per BW, dl/kg +
-
+double Vg = 1.2238;     // plasma per BW, dl/kg +
 double m2 = 90;         // + М ?
 
 
@@ -68,7 +66,7 @@ MainWindow::MainWindow(QWidget *parent)
 
                 ind=read.indexOf(",");
                 tr=read.left(ind).toDouble();
-                Kvect.append(tr);                // массив времени
+                Kvect.append(tr);
                 read.remove(0,ind+1);
 
         }
@@ -88,7 +86,7 @@ MainWindow::MainWindow(QWidget *parent)
     QVector<double> insMatlab;
 
     double t0global = 0;    // начальное время
-    double t1global = 720 -5;  // конецчное время
+    double t1global = 720 -5;  // конечное время
 
     double bas[7];          // для расчёта Vbas
     bas[0] = Vbas;
@@ -96,9 +94,10 @@ MainWindow::MainWindow(QWidget *parent)
     bas[2] = 110.0;
     bas[3] = 70.0;
     bas[4] = 1.5;
+    //bas[5] = bas[0]*(1+bas[4]);
     bas[6] = 180.0;
     double Vb = bas[0];
-    Vbas = Vb;
+    //Vbas = Vb;
 
     QVector <double> grafVbas;
     grafVbas.append(Vbas);
@@ -146,21 +145,20 @@ MainWindow::MainWindow(QWidget *parent)
     DataZ start;
     // start.t = a;
 
-
-    /* bgDynam */               // присвоение стартовых значений в структуру для расчёта
-    double Ginit=122.00;        // начальный уровень гликемии
-    start.gp = Ginit*1.8;                  // +
+    /* bgDynam */                   // присвоение стартовых значений в структуру для расчёта
+    double Ginit=122.00;            // начальный уровень гликемии
+    start.gp = Ginit*1.8;           // +
     start.Il = 2.61;                // +
     start.Ip = 5.2040;              //55.12/20 +
-    start.fgut = 0.0;             // mg +
-    start.fliq = 0.0;             // mg +
-    start.fsol = 0.0;             // mg +
-    start.gt = 169.72;                 // +
+    start.fgut = 0.0;               // mg +
+    start.fliq = 0.0;               // mg +
+    start.fsol = 0.0;               // mg +
+    start.gt = 169.72;              // +
     start.I1 = 104.08;              // +
     start.Id = 104.08;              // +
-    start.Xt = 0.0;               // +
+    start.Xt = 0.0;                 // +
     start.Ipo = 3.08;               // +
-    start.Yt = 0.0;               // +
+    start.Yt = 0.0;                 // +
     start.Ii = 4120;                // +
     start.It = 10830;               // +
     data.push_back(start);
@@ -205,18 +203,13 @@ MainWindow::MainWindow(QWidget *parent)
     double Yt = start.Yt;
     double Ii = start.Ii;
 
-
     double OB = 6.63;//(m2/19) *1.5;      // result of bolus calculation +
-    //qDebug()<<OB;
-
 
         /* Глобальный цикл */
     for (int i = 1; t0global <= t1global; i++){
 
-
         double  a = i*5 - 5;    // промедуток 5 минут
-        double  b = i*5;    // конечное время
-
+        double  b = i*5;        // конечное время
 
         double K[7];
         double dz;
@@ -224,9 +217,7 @@ MainWindow::MainWindow(QWidget *parent)
         double s;
 
         //int stepCount = (b / h) + 1;
-       //double currentTime = a + h;
-
-
+        //double currentTime = a + h;
 
         Dig = 1176*m2+1; // вместо m2 массу углеводов
         Dbol1=del*OB;
@@ -235,7 +226,6 @@ MainWindow::MainWindow(QWidget *parent)
 
         t = t0global;
 
-
         /*************************************************                      Цикл решения ДУ                   ********************************************************/
 
         for (double j = a; j <= b;)
@@ -243,10 +233,9 @@ MainWindow::MainWindow(QWidget *parent)
         //for (double j = 1; j <= stepCount; j++)
 
         {
-            //hmin = 16*eps*t;
             /* */
             // Fluctuations
-            vbas=Vbas*100; // pmol/min
+            vbas=Vbas*100;      // pmol/min
             bol1=1/Ti1*Dbol1*(1./(1+exp(-3*(t+10-ti1))))*(1./(1+exp(-3*(-10+ti1-t+Ti1))));
             bol2=1/Ti2*Dbol2*(1./(1+exp(-3*(t+10-ti2))))*(1./(1+exp(-3*(-10+ti2-t+Ti2))));
             bol3=1/Ti3*Dbol3*(1./(1+exp(-3*(t+10-ti3))))*(1./(1+exp(-3*(-10+ti3-t+Ti3))));
@@ -254,14 +243,23 @@ MainWindow::MainWindow(QWidget *parent)
             vbol=6000*(bol1+bol2+bol3);
 
             vm=Dig/Tm*(1./(1+exp(-3*(t-tm1))))*(1./(1+exp(-3*(-(t-tm1-Tm)))));
+//            double Heavi0;
+//            double Heavi01;
+//            if( (t-tm1) >= 0){
+//                Heavi0 = 1;}
+//            if( (t-tm1) < 0){
+//                 Heavi0 = 0;}
+//            if( (-(t-tm1-Tm)) >= 0){
+//                Heavi01 = 1;}
+//            if( (-(t-tm1-Tm)) < 0){
+//                 Heavi01 = 0;}
+//            vm=Dig/Tm*Heavi0*Heavi01;
 
             /* ДУ */
 
             // Решаем dgp через Рунге-Кутта
             //dgp=EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt; // plasma glucose mg/dl
             // dgp = f(fgut,gt,Id,Ipo,fgut,gp)
-
-
 
 //            double Heavi1;
 //            if( (gp-Kvect.at(32))>= 0){
@@ -486,7 +484,6 @@ MainWindow::MainWindow(QWidget *parent)
             hopt4 = s*h4;
             if( hopt4 < hmin) hopt4 = hmin;
             else if(hopt4 > hmax) hopt4 = hmax;
-
 
             // Решаем dXt через Рунге-Кутта
             // dXt=-Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2;
@@ -1101,7 +1098,6 @@ MainWindow::MainWindow(QWidget *parent)
             CGB.append(currentValues.gp/Kvect.at(23));
             Ipg.append(currentValues.Ip*20);
 
-
             I1 = dI1;
             Id = dId;
             Ii = dIi;
@@ -1134,7 +1130,7 @@ MainWindow::MainWindow(QWidget *parent)
 
             t = t + h; // увеличиваем время
             j = j + h;
-        } // конец цикла stepСount
+        } // конец цикла 5 min
 
 
         /* __________________________________________________________________________ Расчёт Vbas ___________________________________________________________________________ */
