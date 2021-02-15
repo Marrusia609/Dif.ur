@@ -8,43 +8,14 @@
 
 using namespace std;
 
-double t = 0.0;         // время начинается с нуля
-
-    /* meal data */
-double tm1 = 60; // tm  // время приёма пищи
-double Tm = 20;         // длительность приёма пищи
-double Dig = 0;         // масса углеводов начальная
-
-    /* bolus */
-double Ti1 = 10;
-double Ti2 = 10;
-double ti2 = 60;
-double ti1 = 30;
-double Ti3 = 10;
-double ti3 = 10;
-
-double del = 0.4;       // result of bolus calculation +
-
-double Dbol1 = 0;      // доза болюса начальная
-double Dbol2 = 0;      // доза болюса начальная
-double Dbol3 = 0;      // доза болюса начальная
-
-    /* bazal ins */
-double Vbas = 1.2238;   // доза базального инсулина  +
-double Vg = 1.2238;     // plasma per BW, dl/kg +
-double m2 = 90;         // + М ?
-
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
-    QVector <double> Kvect;
-
     /* Обработка K[37] */
-    QTextStream in;                         // поток данных
+    QTextStream in;
     QString read;
 
     int ind = 0;                            // индекс для записи в массивы
@@ -60,7 +31,7 @@ MainWindow::MainWindow(QWidget *parent)
         in >> read;
         file.close();
 
-        double tr=0;                        // переменные для записи данных из csv файла в разные массивы
+        double tr=0;
 
         for ( int i=0; i < 37; i++ ){
 
@@ -70,8 +41,6 @@ MainWindow::MainWindow(QWidget *parent)
                 read.remove(0,ind+1);
 
         }
-
-        qDebug()<<Kvect;
     }
     /* */
 
@@ -88,16 +57,15 @@ MainWindow::MainWindow(QWidget *parent)
     double t0global = 0;    // начальное время
     double t1global = 720 -5;  // конечное время
 
+    Vbas = 1.2238;   // доза базального инсулина  +
     double bas[7];          // для расчёта Vbas
     bas[0] = Vbas;
     bas[1] = 140.0;
     bas[2] = 110.0;
     bas[3] = 70.0;
     bas[4] = 1.5;
-    //bas[5] = bas[0]*(1+bas[4]);
     bas[6] = 180.0;
     double Vb = bas[0];
-    //Vbas = Vb;
 
     QVector <double> grafVbas;
     grafVbas.append(Vbas);
@@ -140,29 +108,6 @@ MainWindow::MainWindow(QWidget *parent)
     double h13 = h;
     double h14 = h;
 
-    vector<DataZ> data;
-
-    DataZ start;
-    // start.t = a;
-
-    /* bgDynam */                   // присвоение стартовых значений в структуру для расчёта
-    double Ginit=122.00;            // начальный уровень гликемии
-    start.gp = Ginit*1.8;           // +
-    start.Il = 2.61;                // +
-    start.Ip = 5.2040;              //55.12/20 +
-    start.fgut = 0.0;               // mg +
-    start.fliq = 0.0;               // mg +
-    start.fsol = 0.0;               // mg +
-    start.gt = 169.72;              // +
-    start.I1 = 104.08;              // +
-    start.Id = 104.08;              // +
-    start.Xt = 0.0;                 // +
-    start.Ipo = 3.08;               // +
-    start.Yt = 0.0;                 // +
-    start.Ii = 4120;                // +
-    start.It = 10830;               // +
-    data.push_back(start);
-
     // Fluctuations
     double vbas;
     double bol1;
@@ -187,23 +132,41 @@ MainWindow::MainWindow(QWidget *parent)
     double dIt;
     double dIi;
     double dId;
-    // присваиваем стартовые значения
-    double gp = start.gp;
-    double Id = start.Id;
-    double Ipo = start.Ipo;
-    double fgut = start.fgut;
-    double fsol = start.fsol;
-    double fliq = start.fliq;
-    double gt = start.gt;
-    double Xt = start.Xt;
-    double I1 = start.I1;
-    double Ip = start.Ip;
-    double It = start.It;
-    double Il = start.Il;
-    double Yt = start.Yt;
-    double Ii = start.Ii;
 
-    double OB = 6.63;//(m2/19) *1.5;      // result of bolus calculation +
+
+    double Ginit=122.00;            // начальный уровень гликемии
+    dZ[0] = Ginit*1.8;
+    dZ[1] = 104.08;
+    dZ[2] = 3.08;
+    dZ[3] = 0.0;
+    dZ[4] = 0.0;
+    dZ[5] = 0.0;
+    dZ[6] = 169.72;
+    dZ[7] = 0.0;
+    dZ[8] = 104.08;
+    dZ[9] = 5.2040;
+    dZ[10] = 10830;
+    dZ[11] = 2.61;
+    dZ[12] = 0.0;
+    dZ[13] = 4120;
+
+    //присваиваем стартовые значения
+   double gp = dZ[0];
+   double Id = dZ[1];
+   double Ipo = dZ[2];
+   double fgut = dZ[3];
+   double fsol = dZ[4];
+   double fliq = dZ[5];
+   double gt = dZ[6];
+   double Xt = dZ[7];
+   double I1 = dZ[8];
+   double Ip = dZ[9];
+   double It = dZ[10];
+   double Il = dZ[11];
+   double Yt = dZ[12];
+   double Ii = dZ[13];
+
+    double OB = 6.63;//(m2/19) *1.5;      // result of bolus calculation Потом переместить в Глобальный цикл
 
         /* Глобальный цикл */
     for (int i = 1; t0global <= t1global; i++){
@@ -216,24 +179,32 @@ MainWindow::MainWindow(QWidget *parent)
         double err;
         double s;
 
-        //int stepCount = (b / h) + 1;
-        //double currentTime = a + h;
+        double del = 0.4;       // result of bolus calculation +
+        double m2 = 90;         // + М ?
 
-        Dig = 1176*m2+1; // вместо m2 массу углеводов
-        Dbol1=del*OB;
-        Dbol2=(1-del)*OB;
-        Dbol3=0;
+        double Dig = 1176*m2+1; // вместо m2 массу углеводов
+        double Dbol1=del*OB;
+        double Dbol2=(1-del)*OB;
+        double Dbol3=0.0;
 
         t = t0global;
 
         /*************************************************                      Цикл решения ДУ                   ********************************************************/
+       // DormanPrince(i);
 
         for (double j = a; j <= b;)
 
-        //for (double j = 1; j <= stepCount; j++)
-
         {
-            /* */
+                /* bolus */
+            double Ti1 = 10;
+            double Ti2 = 10;
+            double ti2 = 60;
+            double ti1 = 30;
+            double Ti3 = 10;
+            double ti3 = 10;
+            double tm1 = 60; // tm  // время приёма пищи
+            double Tm = 20;         // длительность приёма пищи
+
             // Fluctuations
             vbas=Vbas*100;      // pmol/min
             bol1=1/Ti1*Dbol1*(1./(1+exp(-3*(t+10-ti1))))*(1./(1+exp(-3*(-10+ti1-t+Ti1))));
@@ -243,17 +214,6 @@ MainWindow::MainWindow(QWidget *parent)
             vbol=6000*(bol1+bol2+bol3);
 
             vm=Dig/Tm*(1./(1+exp(-3*(t-tm1))))*(1./(1+exp(-3*(-(t-tm1-Tm)))));
-//            double Heavi0;
-//            double Heavi01;
-//            if( (t-tm1) >= 0){
-//                Heavi0 = 1;}
-//            if( (t-tm1) < 0){
-//                 Heavi0 = 0;}
-//            if( (-(t-tm1-Tm)) >= 0){
-//                Heavi01 = 1;}
-//            if( (-(t-tm1-Tm)) < 0){
-//                 Heavi01 = 0;}
-//            vm=Dig/Tm*Heavi0*Heavi01;
 
             /* ДУ */
 
@@ -273,36 +233,39 @@ MainWindow::MainWindow(QWidget *parent)
 //            if( (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo) < 0){
 //                 Heavi3 = 0;}
 
-//            K[0] = h*((Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt);
+//            double EGP;
+//            EGP=(Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)*Heavi3;
+
+//            K[0] = h*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt);
 
 //            if( ((gp+ h*K[0]/2.0)-Kvect.at(32))>= 0){
 //                 Heavi1 = 1;}
 //            if( ((gp+ h*K[0]/2.0)-Kvect.at(32)) < 0){
 //                 Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
-//                 Heavi3 = 0;}
+////            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))  >= 0){
+////                 Heavi3 = 1;}
+////            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
+////                 Heavi3 = 0;}
 //            K[1] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[0]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[0]/2.0)+Kvect.at(25)*(gt+ h/2.0));
 
 //            if( ((gp+ h*K[1]/2.0)-Kvect.at(32))>= 0){
 //                 Heavi1 = 1;}
 //            if( ((gp+ h*K[1]/2.0)-Kvect.at(32)) < 0){
 //                 Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
-//                 Heavi3 = 0;}
+////            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))  >= 0){
+////                 Heavi3 = 1;}
+////            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
+////                 Heavi3 = 0;}
 //            K[2] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[1]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[1]/2.0)+Kvect.at(25)*(gt+ h/2.0));
 
 //            if( ((gp+ h*K[2])-Kvect.at(32))>= 0){
 //                 Heavi1 = 1;}
 //            if( ((gp+ h*K[2])-Kvect.at(32)) < 0){
 //                 Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h)) < 0){
-//                 Heavi3 = 0;}
+////            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))  >= 0){
+////                 Heavi3 = 1;}
+////            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h)) < 0){
+////                 Heavi3 = 0;}
 //            K[3] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[2])-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[2])+Kvect.at(25)*(gt+ h));
 
 //            dgp   = gp + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
@@ -330,10 +293,10 @@ MainWindow::MainWindow(QWidget *parent)
                  Heavi1 = 1;}
             if( ((gp+ h1*K[0]/5.0)-Kvect.at(32)) < 0){
                  Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h1*K[0]/5.0)-Kvect.at(13)*(Id+ h1/5.0)-Kvect.at(14)*(Ipo+ h1/5.0))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h1*K[0]/5.0)-Kvect.at(13)*(Id+ h1/5.0)-Kvect.at(14)*(Ipo+ h1/5.0)) < 0){
-//                 Heavi3 = 0;}
+            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ h1*K[0]/5.0)-Kvect.at(13)*(Id+ h1/5.0)-Kvect.at(14)*(Ipo+ h1/5.0))  >= 0){
+                 Heavi3 = 1;}
+            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h1*K[0]/5.0)-Kvect.at(13)*(Id+ h1/5.0)-Kvect.at(14)*(Ipo+ h1/5.0)) < 0){
+                 Heavi3 = 0;}*/
             //K[1] = h1*((Kvect.at(11)-Kvect.at(12)*(gp+ h1*K[0]/5.0)-Kvect.at(13)*(Id+ h1/5.0)-Kvect.at(14)*(Ipo+ h1/5.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h1/5.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h1*K[0]/5.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h1*K[0]/5.0)+Kvect.at(25)*(gt+ h1/5.0));
             K[1] = h1*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h1/5.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h1*K[0]/5.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h1*K[0]/5.0)+Kvect.at(25)*(gt+ h1/5.0));
 
@@ -341,10 +304,10 @@ MainWindow::MainWindow(QWidget *parent)
                  Heavi1 = 1;}
             if( ((gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)-Kvect.at(32)) < 0){
                  Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)-Kvect.at(13)*(Id+ 3*h1/10.0)-Kvect.at(14)*(Ipo+ 3*h1/10.0))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)-Kvect.at(13)*(Id+ 3*h1/10.0)-Kvect.at(14)*(Ipo+ 3*h1/10.0)) < 0){
-//                 Heavi3 = 0;}
+            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)-Kvect.at(13)*(Id+ 3*h1/10.0)-Kvect.at(14)*(Ipo+ 3*h1/10.0))  >= 0){
+                 Heavi3 = 1;}
+            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)-Kvect.at(13)*(Id+ 3*h1/10.0)-Kvect.at(14)*(Ipo+ 3*h1/10.0)) < 0){
+                 Heavi3 = 0;}*/
             //K[2] = h1*((Kvect.at(11)-Kvect.at(12)*(gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)-Kvect.at(13)*(Id+ 3*h1/10.0)-Kvect.at(14)*(Ipo+ 3*h1/10.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ 3*h1/10.0)-Kvect.at(26)-Kvect.at(31)*((gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)+Kvect.at(25)*(gt+ 3*h1/10.0));
             K[2] = h1*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ 3*h1/10.0)-Kvect.at(26)-Kvect.at(31)*((gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 3*h1*K[0]/40.0 + 9*h1*K[1]/40.0)+Kvect.at(25)*(gt+ 3*h1/10.0));
 
@@ -352,10 +315,10 @@ MainWindow::MainWindow(QWidget *parent)
                  Heavi1 = 1;}
             if( ((gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)-Kvect.at(32)) < 0){
                  Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)-Kvect.at(13)*(Id+ 4*h1/5.0)-Kvect.at(14)*(Ipo+ 4*h1/5.0))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)-Kvect.at(13)*(Id+ 4*h1/5.0)-Kvect.at(14)*(Ipo+ 4*h1/5.0)) < 0){
-//                 Heavi3 = 0;}
+            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)-Kvect.at(13)*(Id+ 4*h1/5.0)-Kvect.at(14)*(Ipo+ 4*h1/5.0))  >= 0){
+                 Heavi3 = 1;}
+            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)-Kvect.at(13)*(Id+ 4*h1/5.0)-Kvect.at(14)*(Ipo+ 4*h1/5.0)) < 0){
+                 Heavi3 = 0;}*/
             //K[3] = h1*((Kvect.at(11)-Kvect.at(12)*(gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)-Kvect.at(13)*(Id+ 4*h1/5.0)-Kvect.at(14)*(Ipo+ 4*h1/5.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ 4*h1/5.0)-Kvect.at(26)-Kvect.at(31)*((gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)+Kvect.at(25)*(gt+ 4*h1/5.0));
             K[3] = h1*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ 4*h1/5.0)-Kvect.at(26)-Kvect.at(31)*((gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 44*h1*K[0]/45.0 + (-56*h1*K[1]/15.0) + 32*h1*K[2]/9.0)+Kvect.at(25)*(gt+ 4*h1/5.0));
 
@@ -363,10 +326,10 @@ MainWindow::MainWindow(QWidget *parent)
                  Heavi1 = 1;}
             if( ((gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )-Kvect.at(32)) < 0){
                  Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )-Kvect.at(13)*(Id+ 8*h1/9.0)-Kvect.at(14)*(Ipo+ 8*h1/9.0))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )-Kvect.at(13)*(Id+ 8*h1/9.0)-Kvect.at(14)*(Ipo+ 8*h1/9.0)) < 0){
-//                 Heavi3 = 0;}
+            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )-Kvect.at(13)*(Id+ 8*h1/9.0)-Kvect.at(14)*(Ipo+ 8*h1/9.0))  >= 0){
+                 Heavi3 = 1;}
+            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )-Kvect.at(13)*(Id+ 8*h1/9.0)-Kvect.at(14)*(Ipo+ 8*h1/9.0)) < 0){
+                 Heavi3 = 0;}*/
             //K[4] = h1*((Kvect.at(11)-Kvect.at(12)*(gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )-Kvect.at(13)*(Id+ 8*h1/9.0)-Kvect.at(14)*(Ipo+ 8*h1/9.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ 8*h1/9.0)-Kvect.at(26)-Kvect.at(31)*((gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )+Kvect.at(25)*(gt+ 8*h1/9.0));
             K[4] = h1*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ 8*h1/9.0)-Kvect.at(26)-Kvect.at(31)*((gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 19372*h1*K[0]/6561.0 + (-25360*h1*K[1]/2187.0) + 64448*h1*K[2]/6561.0 + (-212*h1*K[3]/729.0) )+Kvect.at(25)*(gt+ 8*h1/9.0));
 
@@ -374,10 +337,10 @@ MainWindow::MainWindow(QWidget *parent)
                  Heavi1 = 1;}
             if( ((gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))-Kvect.at(32)) < 0){
                  Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1)) < 0){
-//                 Heavi3 = 0;}
+            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1))  >= 0){
+                 Heavi3 = 1;}
+            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1)) < 0){
+                 Heavi3 = 0;}*/
             //K[5] = h1*((Kvect.at(11)-Kvect.at(12)*(gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h1)-Kvect.at(26)-Kvect.at(31)*((gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))+Kvect.at(25)*(gt+ h1));
             K[5] = h1*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h1)-Kvect.at(26)-Kvect.at(31)*((gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 9017*h1*K[0]/3168.0 + (-355*h1*K[1]/33.0) + 46732*h1*K[2]/5247.0 + (49*h1*K[3]/176.0) + (-5103*h1*K[4]/18656.0))+Kvect.at(25)*(gt+ h1));
 
@@ -385,10 +348,10 @@ MainWindow::MainWindow(QWidget *parent)
                  Heavi1 = 1;}
             if( ((gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)-Kvect.at(32)) < 0){
                  Heavi1 = 0;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1))  >= 0){
-//                 Heavi3 = 1;}
-//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1)) < 0){
-//                 Heavi3 = 0;}
+            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1))  >= 0){
+                 Heavi3 = 1;}
+            if( (Kvect.at(11)-Kvect.at(12)*(gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1)) < 0){
+                 Heavi3 = 0;}*/
             //K[6] = h1*((Kvect.at(11)-Kvect.at(12)*(gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)-Kvect.at(13)*(Id+ h1)-Kvect.at(14)*(Ipo+ h1))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h1)-Kvect.at(26)-Kvect.at(31)*((gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)+Kvect.at(25)*(gt+ h1));
             K[6] = h1*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h1)-Kvect.at(26)-Kvect.at(31)*((gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ 35*h1*K[0]/384.0 + 500*h1*K[2]/1113.0 + (125*h1*K[3]/192.0) + (-2187*h1*K[4]/6784.0) + 11*h1*K[5]/84.0)+Kvect.at(25)*(gt+ h1));
 
@@ -400,10 +363,10 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt1 < hmin)  hopt1 = hmin;
             else if(hopt1 > hmax) hopt1 = hmax;
 
-            // Решаем dgt через Рунге-Кутта
+//            // Решаем dgt через Рунге-Кутта
 
-            // dgt=-((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt;
-            // dgt = f(Xt,gp,gt)
+//            // dgt=-((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt;
+//            // dgt = f(Xt,gp,gt)
 
 //            K[0] = h*(-((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt);
 //            K[1] = h*(-((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[0]/2.0))/(Kvect.at(29)+(gt + h*K[0]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[0]/2.0));
@@ -429,10 +392,10 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt2 < hmin) hopt2 = hmin;
             else if(hopt2 > hmax) hopt2 = hmax;
 
-            // Решаем dI1 через Рунге-Кутта
+//            // Решаем dI1 через Рунге-Кутта
 
-            // dI1=-Kvect.at(15)*(I1-Ip/Kvect.at(4));
-            // dI1 = f(Ip,I1)
+//            // dI1=-Kvect.at(15)*(I1-Ip/Kvect.at(4));
+//            // dI1 = f(Ip,I1)
 
 //            K[0] = h*(-Kvect.at(15)*(I1-Ip/Kvect.at(4)));
 //            K[1] = h*(-Kvect.at(15)*((I1 + h*K[0]/2.0)-(Ip+ h/2.0)/Kvect.at(4)));
@@ -458,9 +421,9 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt3 < hmin) hopt3 = hmin;
             else if(hopt3 > hmax) hopt3 = hmax;
 
-            // Решаем dId через Рунге-Кутта
-            // dId=-Kvect.at(15)*(Id-I1);
-            // dId = f(I1,Id)?
+//            // Решаем dId через Рунге-Кутта
+//            // dId=-Kvect.at(15)*(Id-I1);
+//            // dId = f(I1,Id)?
 //            K[0] = h*(-Kvect.at(15)*(Id-I1));
 //            K[1] = h*(-Kvect.at(15)*((Id + h*K[0]/2.0)-(I1+h/2.0)));
 //            K[2] = h*(-Kvect.at(15)*((Id + h*K[1]/2.0)-(I1+h/2.0)));
@@ -485,9 +448,9 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt4 < hmin) hopt4 = hmin;
             else if(hopt4 > hmax) hopt4 = hmax;
 
-            // Решаем dXt через Рунге-Кутта
-            // dXt=-Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2;
-            // dXt = f(Ip,Xt)?
+//            // Решаем dXt через Рунге-Кутта
+//            // dXt=-Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2;
+//            // dXt = f(Ip,Xt)?
 //            double Heavi2;
 //            if( ((Ip/Kvect.at(4))-Kvect.at(1)) >= 0){
 //                 Heavi2 = 1;}
@@ -569,9 +532,9 @@ MainWindow::MainWindow(QWidget *parent)
             else if(hopt5 > hmax) hopt5 = hmax;
 
 
-            // Решаем dIl через Рунге-Кутта
-            // dIl=-(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip;
-            // dIl = f(Ip,Il)?
+//            // Решаем dIl через Рунге-Кутта
+//            // dIl=-(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip;
+//            // dIl = f(Ip,Il)?
 
 //            K[0] = h*(-(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip);
 //            K[1] = h*(-(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[0]/2.0)+Kvect.at(6)*(Ip+ h/2.0));
@@ -598,9 +561,9 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt6 < hmin) hopt6 = hmin;
             else if(hopt6 > hmax) hopt6 = hmax;
 
-            // Решаем dIp через Рунге-Кутта
-            // dIp=-Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip;
-            // dIp = f(Il,It,Ip)?
+//            // Решаем dIp через Рунге-Кутта
+//            // dIp=-Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip;
+//            // dIp = f(Il,It,Ip)?
 //            K[0] = h*(-Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip);
 //            K[1] = h*(-Kvect.at(6)*(Ip+ h*K[0]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[0]/2.0));
 //            K[2] = h*(-Kvect.at(6)*(Ip+ h*K[1]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[1]/2.0));
@@ -626,9 +589,9 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt7 < hmin) hopt7 = hmin;
             else if(hopt7 > hmax) hopt7 = hmax;
 
-            // Решаем dfgut через Рунге-Кутта
-            // dfgut=-Kvect.at(17)*fgut+kgut*fliq;
-            // dfgut = f(fliq,fsol,fgut)?
+//            // Решаем dfgut через Рунге-Кутта
+//            // dfgut=-Kvect.at(17)*fgut+kgut*fliq;
+//            // dfgut = f(fliq,fsol,fgut)?
 
             double kgut;
             kgut=Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2);
@@ -640,7 +603,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 //            dfgut   = fgut + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
-            // Решение dfgut через Дормана-Принса
+//            // Решение dfgut через Дормана-Принса
 
 //            K[0] = h8*(-Kvect.at(17)*fgut+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2)*fliq);
 //            K[1] = h8*(-Kvect.at(17)*(fgut+ h8*K[0]/5.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h8/5.0)+(fliq+ h8/5.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h8/5.0)+(fliq+ h8/5.0)-Kvect.at(22)*Dig))+2)*(fliq+ h8/5.0));
@@ -666,9 +629,9 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt8 < hmin) hopt8 = hmin;
             else if(hopt8 > hmax) hopt8 = hmax;
 
-            // Решаем dfliq через Рунге-Кутта
-            // dfliq=-kgut*fliq+Kvect.at(18)*fsol;
-            // dfliq = f(fliq,fsol)?
+//            // Решаем dfliq через Рунге-Кутта
+//            // dfliq=-kgut*fliq+Kvect.at(18)*fsol;
+//            // dfliq = f(fliq,fsol)?
 
 //            K[0] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2))*fliq+Kvect.at(18)*fsol);
 //            K[1] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[0]/2.0)+Kvect.at(18)*(fsol+ h/2.0));
@@ -703,9 +666,9 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt9 < hmin) hopt9 = hmin;
             else if(hopt9 > hmax) hopt9 = hmax;
 
-            // Решаем dfsol через Рунге-Кутта
-            // dfsol=-Kvect.at(18)*fsol+vm;
-            // dfsol = f(fsol,vm)?
+//            // Решаем dfsol через Рунге-Кутта
+//            // dfsol=-Kvect.at(18)*fsol+vm;
+//            // dfsol = f(fsol,vm)?
 
 //            K[0] = h*(-Kvect.at(18)*fsol+vm);
 //            K[1] = h*(-Kvect.at(18)*(fsol+ h*K[0]/2.0)+(vm+ h/2.0));
@@ -732,9 +695,9 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt10 < hmin) hopt10 = hmin;
             else if(hopt10 > hmax) hopt10 = hmax;
 
-            // Решаем dIpo через Рунге-Кутта
-            // dIpo=-Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6);
-            // dIpo = f(Yt,dgp,Ipo)?
+//            // Решаем dIpo через Рунге-Кутта
+//            // dIpo=-Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6);
+//            // dIpo = f(Yt,dgp,Ipo)?
 //            double Heavi5;
 //            double Heavi6;
 
@@ -784,7 +747,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 //            dIpo   = Ipo + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
 
-            // Решение dIpo через Дормана-Принса
+//            // Решение dIpo через Дормана-Принса
 
             double Heavi5;
             double Heavi6;
@@ -875,9 +838,9 @@ MainWindow::MainWindow(QWidget *parent)
             else if(hopt11 > hmax) hopt11 = hmax;
 
 
-            // Решаем dYt через Рунге-Кутта
-            // dYt=-Kvect.at(34)*(Yt-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*Yt-Kvect.at(34)*Kvect.at(3))*(Heavi8);
-            // dYt = f(gp,Yt)?
+//            // Решаем dYt через Рунге-Кутта
+//            // dYt=-Kvect.at(34)*(Yt-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*Yt-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+//            // dYt = f(gp,Yt)?
 //            double Heavi7;
 //            double Heavi8;
 
@@ -1017,12 +980,12 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt12 < hmin) hopt12 = hmin;
             else if(hopt12 > hmax) hopt12 = hmax;
 
-            // Решаем dIt через Рунге-Кутта
-            // dIt=Kvect.at(8)*Ii-Kvect.at(10)*It;
-            // dIt = f(Ii,It)?
+//            // Решаем dIt через Рунге-Кутта
+//            // dIt=Kvect.at(8)*Ii-Kvect.at(10)*It;
+//            // dIt = f(Ii,It)?
 //            K[0] = h*(Kvect.at(8)*Ii-Kvect.at(10)*It);
 //            K[1] = h*(Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[0]/2.0));
-//            K[2] = h*(Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[1]/2.0));
+//           K[2] = h*(Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[1]/2.0));
 //            K[3] = h*(Kvect.at(8)*(Ii+ h)-Kvect.at(10)*(It+ h*K[2]));
 
 //            dIt   = It + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
@@ -1045,9 +1008,9 @@ MainWindow::MainWindow(QWidget *parent)
             if( hopt13 < hmin) hopt13 = hmin;
             else if(hopt13 > hmax) hopt13 = hmax;
 
-            // Решаем dIi через Рунге-Кутта
-            // dIi=-Kvect.at(8)*Ii+vbas+vbol;
-            // dIi = f(vbol,Ii,vbas)?
+//            // Решаем dIi через Рунге-Кутта
+//            // dIi=-Kvect.at(8)*Ii+vbas+vbol;
+//            // dIi = f(vbol,Ii,vbas)?
 //            K[0] = h*(-Kvect.at(8)*Ii+vbas+vbol);
 //            K[1] = h*(-Kvect.at(8)*(Ii+ h*K[0]/2.0)+(vbas+ h/2.0)+(vbol+ h/2.0));
 //            K[2] = h*(-Kvect.at(8)*(Ii+ h*K[1]/2.0)+(vbas+ h/2.0)+(vbol+ h/2.0));
@@ -1075,28 +1038,28 @@ MainWindow::MainWindow(QWidget *parent)
 
             /* __________________________________________________________________________ Обработка выходных значений ___________________________________________________________________________ */
 
-            DataZ currentValues;
-            currentValues.I1 = dI1;
-            currentValues.Id = dId;
-            currentValues.Ii = dIi;
-            currentValues.Il = dIl;
-            currentValues.Ip = dIp;
-            currentValues.It = dIt;
-            currentValues.Xt = dXt;
-            currentValues.Yt = dYt;
-            currentValues.gp = dgp;
-            currentValues.gt = dgt;
-            currentValues.Ipo = dIpo;
-            currentValues.fgut = dfgut;
-            currentValues.fliq = dfliq;
-            currentValues.fsol = dfsol;
-            currentValues.t = t;
+//            DataZ currentValues;
+//            currentValues.I1 = dI1;
+//            currentValues.Id = dId;
+//            currentValues.Ii = dIi;
+//            currentValues.Il = dIl;
+//            currentValues.Ip = dIp;
+//            currentValues.It = dIt;
+//            currentValues.Xt = dXt;
+//            currentValues.Yt = dYt;
+//            currentValues.gp = dgp;
+//            currentValues.gt = dgt;
+//            currentValues.Ipo = dIpo;
+//            currentValues.fgut = dfgut;
+//            currentValues.fliq = dfliq;
+//            currentValues.fsol = dfsol;
+//            currentValues.t = t;
 
-            data.push_back(currentValues);
+//            data.push_back(currentValues);
 
-            tick.append(currentValues.t);
-            CGB.append(currentValues.gp/Kvect.at(23));
-            Ipg.append(currentValues.Ip*20);
+            tick.append(t);
+            CGB.append(dgp/Kvect.at(23));
+            Ipg.append(dIp*20);
 
             I1 = dI1;
             Id = dId;
@@ -1145,7 +1108,7 @@ MainWindow::MainWindow(QWidget *parent)
             double Heavi12;
             double Heavi13;
             double Heavi14;
-            double gpVbas = gp/1.8;
+            double gpVbas = gp/1.8; //gp/1.8;
 
             if( (gpVbas-bas[1]) >= 0){
                  Heavi10 = 1;}
@@ -1177,24 +1140,10 @@ MainWindow::MainWindow(QWidget *parent)
         }
 
         grafVbas.append(Vbas);
-
-        t0global+= 5; // Увеличиваем глобальое время от 0 до 720
         tickBas.append(t0global);
+        t0global+= 5; // Увеличиваем глобальое время от 0 до 720
 
     } // конец глобльного цикла (720)
-
-    for (DataZ dt : data)       // чтение и выгрузка нуэных результов из структуры
-    {
-        cout << dt.t << "\t" <<  dt.gp/Kvect.at(23) << "\t" <<  dt.Ip*20 << "\t" << endl;
-//        tick.append(dt.t);
-//        CGB.append(dt.gp/Kvect.at(23));
-//        Ipg.append(dt.Ip*20);
-    }
-
-    //cout << "Готово! Кол-во шагов: " << stepCount << endl;
-    //cout << "Размер: " << sizeof(DataZ)*data.size() << " bytes" << endl;
-
-
 
                 /* __________________________________________________________________________ Графики___________________________________________________________________________ */
 
@@ -1225,7 +1174,6 @@ MainWindow::MainWindow(QWidget *parent)
 
         in.setDevice(&fileMat2);
         double tr=0;
-
 
         while( !in.atEnd()){
                 QString read = in.readLine();
@@ -1265,8 +1213,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->customPlot->graph(0)->setData(tick ,CGB);
     ui->customPlot->graph(1)->setData(tick ,Ipg);
-    ui->customPlot->graph(2)->setData(tickBas ,grafVbas);
-
+    ui->customPlot->graph(2)->setData(tickBas,grafVbas);
 
     ui->matCustomPlot->addGraph();
     ui->matCustomPlot->xAxis->setAutoTickStep(true);
@@ -1285,7 +1232,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->matCustomPlot->graph(2)->addData(0 ,180);
     ui->matCustomPlot->graph(2)->addData(720 ,180);
 
-
     QVector <double> T720;
     for (int var = 0; var <= 720;) {
         T720.append(var);
@@ -1299,11 +1245,958 @@ MainWindow::MainWindow(QWidget *parent)
     ui->matCustomPlot->rescaleAxes();
     ui->matCustomPlot->replot();
 
-
 }
 
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::DormanPrince(int i)
+{
+
+
+//    double  a = i*5 - 5;    // промедуток 5 минут
+//    double  b = i*5;        // конечное время
+
+//    double eps=0.000001; //error allowance in one step calculation.
+//    double hmin = 0.01;
+//    double hmax = 1;
+
+//    double h = 0.25;
+
+//    double OB = 6.63;//(m2/19) *1.5;      // result of bolus calculation Потом переместить в Глобальный цикл
+
+//    double K[7];
+//    double dz;
+//    double err;
+//    double s;
+
+//    double del = 0.4;       // result of bolus calculation +
+//    double m2 = 90;         // + М ?
+
+//    double Dig = 1176*m2+1; // вместо m2 массу углеводов
+//    double Dbol1=del*OB;
+//    double Dbol2=(1-del)*OB;
+//    double Dbol3=0;
+
+//    /* Индивидуальные шаги для Дормана-Принса */
+//    double hi[14];
+//    hi[0] = h;
+//    hi[1] = h;
+//    hi[2] = h;
+//    hi[3] = h;
+//    hi[4] = h;
+//    hi[5] = h;
+//    hi[6] = h;
+//    hi[7] = h;
+//    hi[8] = h;
+//    hi[9] = h;
+//    hi[10] = h;
+//    hi[11] = h;
+//    hi[12] = h;
+//    hi[13] = h;
+
+
+//    /* Индивидуальные оптимизированные шаги для Дормана-Принса */
+//    double hopt[14];
+
+//    for (double j = a; j <= b;)
+
+//    {
+//            /* bolus */
+//        double Ti1 = 10;
+//        double Ti2 = 10;
+//        double ti2 = 60;
+//        double ti1 = 30;
+//        double Ti3 = 10;
+//        double ti3 = 10;
+//        double tm1 = 60; // tm  // время приёма пищи
+//        double Tm = 20;         // длительность приёма пищи
+
+//        // выходные значения dZout
+//        double dgp;
+//        double dgt;
+//        double dI1;
+//        double dXt;
+//        double dIl;
+//        double dIp;
+//        double dfgut;
+//        double dfliq;
+//        double dfsol;
+//        double dIpo;
+//        double dYt;
+//        double dIt;
+//        double dIi;
+//        double dId;
+
+//        // Fluctuations
+//        double vbas=Vbas*100;      // pmol/min
+//        double bol1=1/Ti1*Dbol1*(1./(1+exp(-3*(t+10-ti1))))*(1./(1+exp(-3*(-10+ti1-t+Ti1))));
+//        double bol2=1/Ti2*Dbol2*(1./(1+exp(-3*(t+10-ti2))))*(1./(1+exp(-3*(-10+ti2-t+Ti2))));
+//        double bol3=1/Ti3*Dbol3*(1./(1+exp(-3*(t+10-ti3))))*(1./(1+exp(-3*(-10+ti3-t+Ti3))));
+
+//        double vbol=6000*(bol1+bol2+bol3);
+
+//        double vm=Dig/Tm*(1./(1+exp(-3*(t-tm1))))*(1./(1+exp(-3*(-(t-tm1-Tm)))));
+
+//        /* ДУ */
+
+//        // Решение dgp через Дормана-Принса
+
+//        double Heavi1;
+//        double Heavi3;
+//        if( (dZ[0]-Kvect.at(32))>= 0){
+//             Heavi1 = 1;}
+//        if( (dZ[0]-Kvect.at(32)) < 0){
+//             Heavi1 = 0;}
+
+//        if( (Kvect.at(11)-Kvect.at(12)*dZ[0]-Kvect.at(13)*dZ[1]-Kvect.at(14)*dZ[2])  >= 0){
+//             Heavi3 = 1;}
+//        if( (Kvect.at(11)-Kvect.at(12)*dZ[0]-Kvect.at(13)*dZ[1]-Kvect.at(14)*dZ[2]) < 0){
+//             Heavi3 = 0;}
+//        double EGP;
+//        EGP=(Kvect.at(11)-Kvect.at(12)*dZ[0]-Kvect.at(13)*dZ[1]-Kvect.at(14)*dZ[2])*Heavi3;
+
+//        K[0] = hi[0]*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*dZ[3]-Kvect.at(26)-Kvect.at(31)*(dZ[0]-Kvect.at(32))*Heavi1-Kvect.at(24)*dZ[0]+Kvect.at(25)*dZ[6]);
+
+//        if( ((dZ[0]+ hi[0]*K[0]/5.0)-Kvect.at(32))>= 0){
+//             Heavi1 = 1;}
+//        if( ((dZ[0]+ hi[0]*K[0]/5.0)-Kvect.at(32)) < 0){
+//             Heavi1 = 0;}
+//        K[1] = hi[0]*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(dZ[3]+ hi[0]/5.0)-Kvect.at(26)-Kvect.at(31)*((dZ[0]+ hi[0]*K[0]/5.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(dZ[0]+ hi[0]*K[0]/5.0)+Kvect.at(25)*(dZ[6]+ hi[0]/5.0));
+
+//        if( ((dZ[0]+ 3*hi[0]*K[0]/40.0 + 9*hi[0]*K[1]/40.0)-Kvect.at(32))>= 0){
+//             Heavi1 = 1;}
+//        if( ((dZ[0]+ 3*hi[0]*K[0]/40.0 + 9*hi[0]*K[1]/40.0)-Kvect.at(32)) < 0){
+//             Heavi1 = 0;}
+//        K[2] = hi[0]*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(dZ[3]+ 3*hi[0]/10.0)-Kvect.at(26)-Kvect.at(31)*((dZ[0]+ 3*hi[0]*K[0]/40.0 + 9*hi[0]*K[1]/40.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(dZ[0]+ 3*hi[0]*K[0]/40.0 + 9*hi[0]*K[1]/40.0)+Kvect.at(25)*(dZ[6]+ 3*hi[0]/10.0));
+
+//        if( ((dZ[0]+ 44*hi[0]*K[0]/45.0 + (-56*hi[0]*K[1]/15.0) + 32*hi[0]*K[2]/9.0)-Kvect.at(32))>= 0){
+//             Heavi1 = 1;}
+//        if( ((dZ[0]+ 44*hi[0]*K[0]/45.0 + (-56*hi[0]*K[1]/15.0) + 32*hi[0]*K[2]/9.0)-Kvect.at(32)) < 0){
+//             Heavi1 = 0;}
+//        K[3] = hi[0]*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(dZ[3]+ 4*hi[0]/5.0)-Kvect.at(26)-Kvect.at(31)*((dZ[0]+ 44*hi[0]*K[0]/45.0 + (-56*hi[0]*K[1]/15.0) + 32*hi[0]*K[2]/9.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(dZ[0]+ 44*hi[0]*K[0]/45.0 + (-56*hi[0]*K[1]/15.0) + 32*hi[0]*K[2]/9.0)+Kvect.at(25)*(dZ[6]+ 4*hi[0]/5.0));
+
+//        if( ((dZ[0]+ 19372*hi[0]*K[0]/6561.0 + (-25360*hi[0]*K[1]/2187.0) + 64448*hi[0]*K[2]/6561.0 + (-212*hi[0]*K[3]/729.0) )-Kvect.at(32))>= 0){
+//             Heavi1 = 1;}
+//        if( ((dZ[0]+ 19372*hi[0]*K[0]/6561.0 + (-25360*hi[0]*K[1]/2187.0) + 64448*hi[0]*K[2]/6561.0 + (-212*hi[0]*K[3]/729.0) )-Kvect.at(32)) < 0){
+//             Heavi1 = 0;}
+//        K[4] = hi[0]*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(dZ[3]+ 8*hi[0]/9.0)-Kvect.at(26)-Kvect.at(31)*((dZ[0]+ 19372*hi[0]*K[0]/6561.0 + (-25360*hi[0]*K[1]/2187.0) + 64448*hi[0]*K[2]/6561.0 + (-212*hi[0]*K[3]/729.0) )-Kvect.at(32))*Heavi1-Kvect.at(24)*(dZ[0]+ 19372*hi[0]*K[0]/6561.0 + (-25360*hi[0]*K[1]/2187.0) + 64448*hi[0]*K[2]/6561.0 + (-212*hi[0]*K[3]/729.0) )+Kvect.at(25)*(dZ[6]+ 8*hi[0]/9.0));
+
+//        if( ((dZ[0]+ 9017*hi[0]*K[0]/3168.0 + (-355*hi[0]*K[1]/33.0) + 46732*hi[0]*K[2]/5247.0 + (49*hi[0]*K[3]/176.0) + (-5103*hi[0]*K[4]/18656.0))-Kvect.at(32))>= 0){
+//             Heavi1 = 1;}
+//        if( ((dZ[0]+ 9017*hi[0]*K[0]/3168.0 + (-355*hi[0]*K[1]/33.0) + 46732*hi[0]*K[2]/5247.0 + (49*hi[0]*K[3]/176.0) + (-5103*hi[0]*K[4]/18656.0))-Kvect.at(32)) < 0){
+//             Heavi1 = 0;}
+//        K[5] = hi[0]*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(dZ[3]+ hi[0])-Kvect.at(26)-Kvect.at(31)*((dZ[0]+ 9017*hi[0]*K[0]/3168.0 + (-355*hi[0]*K[1]/33.0) + 46732*hi[0]*K[2]/5247.0 + (49*hi[0]*K[3]/176.0) + (-5103*hi[0]*K[4]/18656.0))-Kvect.at(32))*Heavi1-Kvect.at(24)*(dZ[0]+ 9017*hi[0]*K[0]/3168.0 + (-355*hi[0]*K[1]/33.0) + 46732*hi[0]*K[2]/5247.0 + (49*hi[0]*K[3]/176.0) + (-5103*hi[0]*K[4]/18656.0))+Kvect.at(25)*(dZ[6]+ hi[0]));
+
+//        if( ((dZ[0]+ 35*hi[0]*K[0]/384.0 + 500*hi[0]*K[2]/1113.0 + (125*hi[0]*K[3]/192.0) + (-2187*hi[0]*K[4]/6784.0) + 11*hi[0]*K[5]/84.0)-Kvect.at(32))>= 0){
+//             Heavi1 = 1;}
+//        if( ((dZ[0]+ 35*hi[0]*K[0]/384.0 + 500*hi[0]*K[2]/1113.0 + (125*hi[0]*K[3]/192.0) + (-2187*hi[0]*K[4]/6784.0) + 11*hi[0]*K[5]/84.0)-Kvect.at(32)) < 0){
+//             Heavi1 = 0;}
+//        K[6] = hi[0]*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(dZ[3]+ hi[0])-Kvect.at(26)-Kvect.at(31)*((dZ[0]+ 35*hi[0]*K[0]/384.0 + 500*hi[0]*K[2]/1113.0 + (125*hi[0]*K[3]/192.0) + (-2187*hi[0]*K[4]/6784.0) + 11*hi[0]*K[5]/84.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(dZ[0]+ 35*hi[0]*K[0]/384.0 + 500*hi[0]*K[2]/1113.0 + (125*hi[0]*K[3]/192.0) + (-2187*hi[0]*K[4]/6784.0) + 11*hi[0]*K[5]/84.0)+Kvect.at(25)*(dZ[6]+ hi[0]));
+
+//        dgp   = dZ[0] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);     // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[0] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dgp);
+//        s = pow(eps*hi[0]/(2*err),1/5);
+//        hopt[0] = s*hi[0];
+//        if( hopt[0] < hmin)  hopt[0] = hmin;
+//        else if(hopt[0] > hmax) hopt[0] = hmax;
+
+//        // Решение dgt через Дормана-Принса
+
+//        K[0] = hi[1]*(-((Kvect.at(27)+Kvect.at(28)*dZ[7])*dZ[6])/(Kvect.at(29)+dZ[6])+Kvect.at(24)*dZ[0]-Kvect.at(25)*dZ[6]);
+//        K[1] = hi[1]*(-((Kvect.at(27)+Kvect.at(28)*(dZ[7] + hi[1]/5.0))*(dZ[6] + hi[1]*K[0]/5.0))/(Kvect.at(29)+(dZ[6] + hi[1]*K[0]/5.0))+Kvect.at(24)*(dZ[0] + hi[1]/5.0)-Kvect.at(25)*(dZ[6] + hi[1]*K[0]/5.0));
+//        K[2] = hi[1]*(-((Kvect.at(27)+Kvect.at(28)*(dZ[7] + 3*hi[1]/10.0))*(dZ[6] + 3*hi[1]*K[0]/40.0 + 9*hi[1]*K[1]/40.0))/(Kvect.at(29)+(dZ[6] + 3*hi[1]*K[0]/40.0 + 9*hi[1]*K[1]/40.0))+Kvect.at(24)*(dZ[0] + 3*hi[1]/10.0)-Kvect.at(25)*(dZ[6] + 3*hi[1]*K[0]/40.0 + 9*hi[1]*K[1]/40.0));
+//        K[3] = hi[1]*(-((Kvect.at(27)+Kvect.at(28)*(dZ[7] + 4*hi[1]/5.0))*(dZ[6] + 44*hi[1]*K[0]/45.0 + (-56*hi[1]*K[1]/15.0) + 32*hi[1]*K[2]/9.0))/(Kvect.at(29)+(dZ[6] + 44*hi[1]*K[0]/45.0 + (-56*hi[1]*K[1]/15.0) + 32*hi[1]*K[2]/9.0))+Kvect.at(24)*(dZ[0] + 4*hi[1]/5.0)-Kvect.at(25)*(dZ[6] + 44*hi[1]*K[0]/45.0 + (-56*hi[1]*K[1]/15.0) + 32*hi[1]*K[2]/9.0));
+//        K[4] = hi[1]*(-((Kvect.at(27)+Kvect.at(28)*(dZ[7] + 8*hi[1]/9.0))*(dZ[6] + 19372*hi[1]*K[0]/6561.0 + (-25360*hi[1]*K[1]/2187.0) + 64448*hi[1]*K[2]/6561.0 + (-212*hi[1]*K[3]/729.0) ))/(Kvect.at(29)+(dZ[6] + 19372*hi[1]*K[0]/6561.0 + (-25360*hi[1]*K[1]/2187.0) + 64448*hi[1]*K[2]/6561.0 + (-212*hi[1]*K[3]/729.0) ))+Kvect.at(24)*(dZ[0] + 8*hi[1]/9.0)-Kvect.at(25)*(dZ[6] + 19372*hi[1]*K[0]/6561.0 + (-25360*hi[1]*K[1]/2187.0) + 64448*hi[1]*K[2]/6561.0 + (-212*hi[1]*K[3]/729.0) ));
+//        K[5] = hi[1]*(-((Kvect.at(27)+Kvect.at(28)*(dZ[7] + hi[1]))*(dZ[6] + 9017*hi[1]*K[0]/3168.0 + (-355*hi[1]*K[1]/33.0) + 46732*hi[1]*K[2]/5247.0 + (49*hi[1]*K[3]/176.0) + (-5103*hi[1]*K[4]/18656.0) ))/(Kvect.at(29)+(dZ[6] + 9017*hi[1]*K[0]/3168.0 + (-355*hi[1]*K[1]/33.0) + 46732*hi[1]*K[2]/5247.0 + (49*hi[1]*K[3]/176.0) + (-5103*hi[1]*K[4]/18656.0) ))+Kvect.at(24)*(dZ[0] + hi[1])-Kvect.at(25)*(dZ[6] + 9017*hi[1]*K[0]/3168.0 + (-355*hi[1]*K[1]/33.0) + 46732*hi[1]*K[2]/5247.0 + (49*hi[1]*K[3]/176.0) + (-5103*hi[1]*K[4]/18656.0) ));
+//        K[6] = hi[1]*(-((Kvect.at(27)+Kvect.at(28)*(dZ[7] + hi[1]))*(dZ[6] + 35*hi[1]*K[0]/384.0 + 500*hi[1]*K[2]/1113.0 + (125*hi[1]*K[3]/192.0) + (-2187*hi[1]*K[4]/6784.0) + 11*hi[1]*K[5]/84.0))/(Kvect.at(29)+(dZ[6] + 35*hi[1]*K[0]/384.0 + 500*hi[1]*K[2]/1113.0 + (125*hi[1]*K[3]/192.0) + (-2187*hi[1]*K[4]/6784.0) + 11*hi[1]*K[5]/84.0))+Kvect.at(24)*(dZ[0] + hi[1])-Kvect.at(25)*(dZ[6] + 35*hi[1]*K[0]/384.0 + 500*hi[1]*K[2]/1113.0 + (125*hi[1]*K[3]/192.0) + (-2187*hi[1]*K[4]/6784.0) + 11*hi[1]*K[5]/84.0));
+
+//        dgt = dZ[6] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);     // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[6] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dgt);
+//        s = pow(eps*hi[1]/(2*err),1/5);
+//        hopt[1] = s*hi[1];
+//        if( hopt[1] < hmin) hopt[1] = hmin;
+//        else if(hopt[1] > hmax) hopt[1] = hmax;
+
+//        // Решение dI1 через Дормана-Принса
+
+//        K[0] = hi[2]*(-Kvect.at(15)*(dZ[8]-dZ[9]/Kvect.at(4)));
+//        K[1] = hi[2]*(-Kvect.at(15)*((dZ[8] + hi[2]*K[0]/5.0)-(dZ[9]+ hi[2]/5.0)/Kvect.at(4)));
+//        K[2] = hi[2]*(-Kvect.at(15)*((dZ[8] + 3*hi[2]*K[0]/40.0 + 9*hi[2]*K[1]/40.0)-(dZ[9]+ 3*hi[2]/10.0)/Kvect.at(4)));
+//        K[3] = hi[2]*(-Kvect.at(15)*((dZ[8] + 44*hi[2]*K[0]/45.0 + (-56*hi[2]*K[1]/15.0) + 32*hi[2]*K[2]/9.0)-(dZ[9]+ 4*hi[2]/5.0)/Kvect.at(4)));
+//        K[4] = hi[2]*(-Kvect.at(15)*((dZ[8] + 19372*hi[2]*K[0]/6561.0 + (-25360*hi[2]*K[1]/2187.0) + 64448*hi[2]*K[2]/6561.0 + (-212*hi[2]*K[3]/729.0) )-(dZ[9]+ 8*hi[2]/9.0)/Kvect.at(4)));
+//        K[5] = hi[2]*(-Kvect.at(15)*((dZ[8] + 9017*hi[2]*K[0]/3168.0 + (-355*hi[2]*K[1]/33.0) + 46732*hi[2]*K[2]/5247.0 + (49*hi[2]*K[3]/176.0) + (-5103*hi[2]*K[4]/18656.0) )-(dZ[9]+ hi[2])/Kvect.at(4)));
+//        K[6] = hi[2]*(-Kvect.at(15)*((dZ[8] + 35*hi[2]*K[0]/384.0 + 500*hi[2]*K[2]/1113.0 + (125*hi[2]*K[3]/192.0) + (-2187*hi[2]*K[4]/6784.0) + 11*hi[2]*K[5]/84.0 )-(dZ[9]+ hi[2])/Kvect.at(4)));
+
+//        dI1 = dZ[8] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);     // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[8] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dI1);
+//        s = pow(eps*hi[2]/(2*err),1/5);
+//        hopt[2] = s*hi[2];
+//        if( hopt[2] < hmin) hopt[2] = hmin;
+//        else if(hopt[2] > hmax) hopt[2] = hmax;
+
+//        // Решение dId через Дормана-Принса
+
+//        K[0] = hi[3]*(-Kvect.at(15)*(dZ[1]-dZ[8]));
+//        K[1] =  hi[3]*(-Kvect.at(15)*((dZ[1] + hi[3]*K[0]/5.0)-(dZ[8]+hi[3]/5.0)));
+//        K[2] =  hi[3]*(-Kvect.at(15)*((dZ[1] + 3*hi[3]*K[0]/40.0 + 9*hi[3]*K[1]/40.0)-(dZ[8]+3*hi[3]/10.0)));
+//        K[3] =  hi[3]*(-Kvect.at(15)*((dZ[1] + 44*hi[3]*K[0]/45.0 + (-56*hi[3]*K[1]/15.0) + 32*hi[3]*K[2]/9.0)-(dZ[8]+4*hi[3]/5.0)));
+//        K[4] =  hi[3]*(-Kvect.at(15)*((dZ[1] + 19372*hi[3]*K[0]/6561.0 + (-25360*hi[3]*K[1]/2187.0) + 64448*hi[3]*K[2]/6561.0 + (-212*hi[3]*K[3]/729.0))-(dZ[8]+8*hi[3]/9.0)));
+//        K[5] =  hi[3]*(-Kvect.at(15)*((dZ[1] + 9017*hi[3]*K[0]/3168.0 + (-355*hi[3]*K[1]/33.0) + 46732*hi[3]*K[2]/5247.0 + (49*hi[3]*K[3]/176.0) + (-5103*hi[3]*K[4]/18656.0))-(dZ[8]+hi[3])));
+//        K[6] =  hi[3]*(-Kvect.at(15)*((dZ[1] + 35*hi[3]*K[0]/384.0 + 500*hi[3]*K[2]/1113.0 + (125*hi[3]*K[3]/192.0) + (-2187*hi[3]*K[4]/6784.0) + 11*hi[3]*K[5]/84.0)-(dZ[8]+hi[3])));
+
+//        dId   = dZ[1] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);                                                // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[1] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dId);
+//        s = pow(eps*hi[3]/(2*err),1/5);
+//        hopt[3] = s*hi[3];
+//        if( hopt[3] < hmin) hopt[3] = hmin;
+//        else if(hopt[3] > hmax) hopt[3] = hmax;
+
+//        // Решение dXt через Дормана-Принса
+
+//        double Heavi2;
+//        if( ((dZ[9]/Kvect.at(4))-Kvect.at(1)) >= 0){
+//             Heavi2 = 1;}
+//        if( ((dZ[9]/Kvect.at(4))-Kvect.at(1)) < 0){
+//             Heavi2 = 0;}
+//        K[0] = hi[4]*(-Kvect.at(30)*dZ[7]+Kvect.at(30)*((dZ[9]/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//        if( (((dZ[9]+ hi[4]/5.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
+//             Heavi2 = 1;}
+//        if( (((dZ[9]+ hi[4]/5.0)/Kvect.at(4))-Kvect.at(1)) < 0){
+//             Heavi2 = 0;}
+//        K[1] = hi[4]*(-Kvect.at(30)*(dZ[7]+ hi[4]*K[0]/5.0)+Kvect.at(30)*(((dZ[9]+ hi[4]/5.0)/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//        if( (((dZ[9]+ 3*hi[4]/10.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
+//             Heavi2 = 1;}
+//        if( (((dZ[9]+ 3*hi[4]/10.0)/Kvect.at(4))-Kvect.at(1)) < 0){
+//             Heavi2 = 0;}
+//        K[2] = hi[4]*(-Kvect.at(30)*(dZ[7]+ 3*hi[4]*K[0]/40.0 + 9*hi[4]*K[1]/40.0)+Kvect.at(30)*(((dZ[9]+ 3*hi[4]/10.0)/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//        if( (((dZ[9]+ 4*hi[4]/5.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
+//             Heavi2 = 1;}
+//        if( (((dZ[9]+ 4*hi[4]/5.0)/Kvect.at(4))-Kvect.at(1)) < 0){
+//             Heavi2 = 0;}
+//        K[3] = hi[4]*(-Kvect.at(30)*(dZ[7]+ 44*hi[4]*K[0]/45.0 + (-56*hi[4]*K[1]/15.0) + 32*hi[4]*K[2]/9.0)+Kvect.at(30)*(((dZ[9]+ 4*hi[4]/5.0)/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//        if( (((dZ[9]+ 8*hi[4]/9.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
+//             Heavi2 = 1;}
+//        if( (((dZ[9]+ 8*hi[4]/9.0)/Kvect.at(4))-Kvect.at(1)) < 0){
+//             Heavi2 = 0;}
+//        K[4] = hi[4]*(-Kvect.at(30)*(dZ[7]+ 19372*hi[4]*K[0]/6561.0 + (-25360*hi[4]*K[1]/2187.0) + 64448*hi[4]*K[2]/6561.0 + (-212*hi[4]*K[3]/729.0) )+Kvect.at(30)*(((dZ[9]+ 8*hi[4]/9.0)/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//        if( (((dZ[9]+ hi[4])/Kvect.at(4))-Kvect.at(1)) >= 0){
+//             Heavi2 = 1;}
+//        if( (((dZ[9]+ hi[4])/Kvect.at(4))-Kvect.at(1)) < 0){
+//             Heavi2 = 0;}
+//        K[5] = hi[4]*(-Kvect.at(30)*(dZ[7]+ 9017*hi[4]*K[0]/3168.0 + (-355*hi[4]*K[1]/33.0) + 46732*hi[4]*K[2]/5247.0 + (49*hi[4]*K[3]/176.0) + (-5103*hi[4]*K[4]/18656.0) )+Kvect.at(30)*(((dZ[9]+ hi[4])/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//        if( (((dZ[9]+ hi[4])/Kvect.at(4))-Kvect.at(1)) >= 0){
+//             Heavi2 = 1;}
+//        if( (((dZ[9]+ hi[4])/Kvect.at(4))-Kvect.at(1)) < 0){
+//             Heavi2 = 0;}
+//        K[6] = hi[4]*(-Kvect.at(30)*(dZ[7]+ 35*hi[4]*K[0]/384.0 + 500*hi[4]*K[2]/1113.0 + (125*hi[4]*K[3]/192.0) + (-2187*hi[4]*K[4]/6784.0) + 11*hi[4]*K[5]/84.0)+Kvect.at(30)*(((dZ[9]+ hi[4])/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//        dXt   = dZ[7] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);                                                // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[7] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dXt);
+//        s = pow(eps*hi[4]/(2*err),1/5);
+//        hopt[4] = s*hi[4];
+//        if( hopt[4] < hmin) hopt[4] = hmin;
+//        else if(hopt[4] > hmax) hopt[4] = hmax;
+
+//        // Решение dIl через Дормана-Принса
+
+//        K[0] = hi[5]*(-(Kvect.at(5)+Kvect.at(7))*dZ[11]+Kvect.at(6)*dZ[9]);
+//        K[1] = hi[5]*(-(Kvect.at(5)+Kvect.at(7))*(dZ[11]+ hi[5]*K[0]/5.0)+Kvect.at(6)*(dZ[9]+ hi[5]/5.0));
+//        K[2] = hi[5]*(-(Kvect.at(5)+Kvect.at(7))*(dZ[11]+ 3*hi[5]*K[0]/40.0 + 9*hi[5]*K[1]/40.0)+Kvect.at(6)*(dZ[9]+ 3*hi[5]/10.0));
+//        K[3] = hi[5]*(-(Kvect.at(5)+Kvect.at(7))*(dZ[11]+ 44*hi[5]*K[0]/45.0 + (-56*hi[5]*K[1]/15.0) + 32*hi[5]*K[2]/9.0)+Kvect.at(6)*(dZ[9]+ 4*hi[5]/5.0));
+//        K[4] = hi[5]*(-(Kvect.at(5)+Kvect.at(7))*(dZ[11]+ 19372*hi[5]*K[0]/6561.0 + (-25360*hi[5]*K[1]/2187.0) + 64448*hi[5]*K[2]/6561.0 + (-212*hi[5]*K[3]/729.0))+Kvect.at(6)*(dZ[9]+ 8*hi[5]/9.0));
+//        K[5] = hi[5]*(-(Kvect.at(5)+Kvect.at(7))*(dZ[11]+ 9017*hi[5]*K[0]/3168.0 + (-355*hi[5]*K[1]/33.0) + 46732*hi[5]*K[2]/5247.0 + (49*hi[5]*K[3]/176.0) + (-5103*hi[5]*K[4]/18656.0))+Kvect.at(6)*(dZ[9]+ hi[5]));
+//        K[6] = hi[5]*(-(Kvect.at(5)+Kvect.at(7))*(dZ[11]+ 35*hi[5]*K[0]/384.0 + 500*hi[5]*K[2]/1113.0 + (125*hi[5]*K[3]/192.0) + (-2187*hi[5]*K[4]/6784.0) + 11*hi[5]*K[5]/84.0)+Kvect.at(6)*(dZ[9]+ hi[5]));
+
+//        dIl   = dZ[11] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);                                                // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[11] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dIl);
+//        s = pow(eps*hi[5]/(2*err),1/5);
+//        hopt[5] = s*hi[5];
+//        if( hopt[5] < hmin) hopt[5] = hmin;
+//        else if(hopt[5] > hmax) hopt[5] = hmax;
+
+//        // Решение dIp через Дормана-Принса
+
+//        K[0] = hi[6]*(-Kvect.at(6)*dZ[9]+Kvect.at(5)*dZ[8]+Kvect.at(10)/Kvect.at(0)*dZ[10]-Kvect.at(9)*dZ[9]);
+//        K[1] = hi[6]*(-Kvect.at(6)*(dZ[9]+ hi[6]*K[0]/5.0)+Kvect.at(5)*(dZ[8]+ hi[6]/5.0)+Kvect.at(10)/Kvect.at(0)*(dZ[10]+ hi[6]/5.0)-Kvect.at(9)*(dZ[9]+ hi[6]*K[0]/5.0));
+//        K[2] = hi[6]*(-Kvect.at(6)*(dZ[9]+ 3*hi[6]*K[0]/40.0 + 9*hi[6]*K[1]/40.0)+Kvect.at(5)*(dZ[8]+ 3*hi[6]/10.0)+Kvect.at(10)/Kvect.at(0)*(dZ[10]+ 3*hi[6]/10.0)-Kvect.at(9)*(dZ[9]+ 3*hi[6]*K[0]/40.0 + 9*hi[6]*K[1]/40.0));
+//        K[3] = hi[6]*(-Kvect.at(6)*(dZ[9]+ 44*hi[6]*K[0]/45.0 + (-56*hi[6]*K[1]/15.0) + 32*hi[6]*K[2]/9.0)+Kvect.at(5)*(dZ[8]+ 4*hi[6]/5.0)+Kvect.at(10)/Kvect.at(0)*(dZ[10]+ 4*hi[6]/5.0)-Kvect.at(9)*(dZ[9]+ 44*hi[6]*K[0]/45.0 + (-56*hi[6]*K[1]/15.0) + 32*hi[6]*K[2]/9.0));
+//        K[4] = hi[6]*(-Kvect.at(6)*(dZ[9]+ 19372*hi[6]*K[0]/6561.0 + (-25360*hi[6]*K[1]/2187.0) + 64448*hi[6]*K[2]/6561.0 + (-212*hi[6]*K[3]/729.0) )+Kvect.at(5)*(dZ[8]+ 8*hi[6]/9.0)+Kvect.at(10)/Kvect.at(0)*(dZ[10]+ 8*hi[6]/9.0)-Kvect.at(9)*(dZ[9]+ 19372*hi[6]*K[0]/6561.0 + (-25360*hi[6]*K[1]/2187.0) + 64448*hi[6]*K[2]/6561.0 + (-212*hi[6]*K[3]/729.0) ));
+//        K[5] = hi[6]*(-Kvect.at(6)*(dZ[9]+ 9017*hi[6]*K[0]/3168.0 + (-355*hi[6]*K[1]/33.0) + 46732*hi[6]*K[2]/5247.0 + (49*hi[6]*K[3]/176.0) + (-5103*hi[6]*K[4]/18656.0))+Kvect.at(5)*(dZ[8]+ hi[6])+Kvect.at(10)/Kvect.at(0)*(dZ[10]+ hi[6])-Kvect.at(9)*(dZ[9]+ 9017*hi[6]*K[0]/3168.0 + (-355*hi[6]*K[1]/33.0) + 46732*hi[6]*K[2]/5247.0 + (49*hi[6]*K[3]/176.0) + (-5103*hi[6]*K[4]/18656.0)));
+//        K[6] = hi[6]*(-Kvect.at(6)*(dZ[9]+ 35*hi[6]*K[0]/384.0 + 500*hi[6]*K[2]/1113.0 + (125*hi[6]*K[3]/192.0) + (-2187*hi[6]*K[4]/6784.0) + 11*hi[6]*K[5]/84.0)+Kvect.at(5)*(dZ[8]+ hi[6])+Kvect.at(10)/Kvect.at(0)*(dZ[10]+ hi[6])-Kvect.at(9)*(dZ[9]+ 35*hi[6]*K[0]/384.0 + 500*hi[6]*K[2]/1113.0 + (125*hi[6]*K[3]/192.0) + (-2187*hi[6]*K[4]/6784.0) + 11*hi[6]*K[5]/84.0));
+
+//        dIp   = dZ[9] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[9] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dIp);
+//        s = pow(eps*hi[6]/(2*err),1/5);
+//        hopt[6] = s*hi[6];
+//        if( hopt[6] < hmin) hopt[6] = hmin;
+//        else if(hopt[6] > hmax) hopt[6] = hmax;
+
+
+//        // Решение dfgut через Дормана-Принса
+//        double kgut;
+//        kgut=Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(dZ[4]+dZ[5]-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(dZ[4]+dZ[5]-Kvect.at(22)*Dig))+2);
+
+//        K[0] = hi[7]*(-Kvect.at(17)*dZ[3]+kgut*dZ[5]);
+//        K[1] = hi[7]*(-Kvect.at(17)*(dZ[3]+ hi[7]*K[0]/5.0)+kgut*(dZ[5]+ hi[7]/5.0));
+//        K[2] = hi[7]*(-Kvect.at(17)*(dZ[3]+ 3*hi[7]*K[0]/40.0 + 9*hi[7]*K[1]/40.0)+kgut*(dZ[5]+ 3*hi[7]/10.0));
+//        K[3] = hi[7]*(-Kvect.at(17)*(dZ[3]+ 44*hi[7]*K[0]/45.0 + (-56*hi[7]*K[1]/15.0) + 32*hi[7]*K[2]/9.0)+kgut*(dZ[5]+ 4*hi[7]/5.0));
+//        K[4] = hi[7]*(-Kvect.at(17)*(dZ[3]+ 19372*hi[7]*K[0]/6561.0 + (-25360*hi[7]*K[1]/2187.0) + 64448*hi[7]*K[2]/6561.0 + (-212*hi[7]*K[3]/729.0) )+kgut*(dZ[5]+ 8*hi[7]/9.0));
+//        K[5] = hi[7]*(-Kvect.at(17)*(dZ[3]+ 9017*hi[7]*K[0]/3168.0 + (-355*hi[7]*K[1]/33.0) + 46732*hi[7]*K[2]/5247.0 + (49*hi[7]*K[3]/176.0) + (-5103*hi[7]*K[4]/18656.0))+kgut*(dZ[5]+ hi[7]));
+//        K[6] = hi[7]*(-Kvect.at(17)*(dZ[3]+ 35*hi[7]*K[0]/384.0 + 500*hi[7]*K[2]/1113.0 + (125*hi[7]*K[3]/192.0) + (-2187*hi[7]*K[4]/6784.0) + 11*hi[7]*K[5]/84.0)+kgut*(dZ[5]+ hi[7]));
+
+//        dfgut   = dZ[3] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[3] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dfgut);
+//        s = pow(eps*hi[7]/(2*err),1/5);
+//        hopt[7] = s*hi[7];
+//        if( hopt[7] < hmin) hopt[7] = hmin;
+//        else if(hopt[7] > hmax) hopt[7] = hmax;
+
+//        // Решение dfliq через Дормана-Принса kgut
+
+//        K[0] = hi[8]*(-kgut*dZ[5]+Kvect.at(18)*dZ[4]);
+//        K[1] = hi[8]*(-kgut*(dZ[5]+ hi[8]*K[0]/5.0)+Kvect.at(18)*(dZ[4]+ hi[8]/5.0));
+//        K[2] = hi[8]*(-kgut*(dZ[5]+ 3*hi[8]*K[0]/40.0 + 9*hi[8]*K[1]/40.0)+Kvect.at(18)*(dZ[4]+ 3*hi[8]/10.0));
+//        K[3] = hi[8]*(-kgut*(dZ[5]+ 44*hi[8]*K[0]/45.0 + (-56*hi[8]*K[1]/15.0) + 32*hi[8]*K[2]/9.0)+Kvect.at(18)*(dZ[4]+ 4*hi[8]/5.0));
+//        K[4] = hi[8]*(-kgut*(dZ[5]+ 19372*hi[8]*K[0]/6561.0 + (-25360*hi[8]*K[1]/2187.0) + 64448*hi[8]*K[2]/6561.0 + (-212*hi[8]*K[3]/729.0))+Kvect.at(18)*(dZ[4]+ 8*hi[8]/9.0));
+//        K[5] = hi[8]*(-kgut*(dZ[5]+ 9017*hi[8]*K[0]/3168.0 + (-355*hi[8]*K[1]/33.0) + 46732*hi[8]*K[2]/5247.0 + (49*hi[8]*K[3]/176.0) + (-5103*hi[8]*K[4]/18656.0))+Kvect.at(18)*(dZ[4]+ hi[8]));
+//        K[6] = hi[8]*(-kgut*(dZ[5]+ 35*hi[8]*K[0]/384.0 + 500*hi[8]*K[2]/1113.0 + (125*hi[8]*K[3]/192.0) + (-2187*hi[8]*K[4]/6784.0) + 11*hi[8]*K[5]/84.0)+Kvect.at(18)*(dZ[4]+ hi[8]));
+
+//        dfliq   = dZ[5] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[5] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dfliq);
+//        s = pow(eps*hi[8]/(2*err),1/5);
+//        hopt[8] = s*hi[8];
+//        if( hopt[8] < hmin) hopt[8] = hmin;
+//        else if(hopt[8] > hmax) hopt[8] = hmax;
+
+//        // Решение dfsol через Дормана-Принса
+
+//        K[0] = hi[9]*(-Kvect.at(18)*dZ[4]+vm);
+//        K[1] = hi[9]*(-Kvect.at(18)*(dZ[4]+ hi[9]*K[0]/5.0)+(vm));
+//        K[2] = hi[9]*(-Kvect.at(18)*(dZ[4]+ 3*hi[9]*K[0]/40.0 + 9*hi[9]*K[1]/40.0)+(vm));
+//        K[3] = hi[9]*(-Kvect.at(18)*(dZ[4]+ 44*hi[9]*K[0]/45.0 + (-56*hi[9]*K[1]/15.0) + 32*hi[9]*K[2]/9.0)+(vm));
+//        K[4] = hi[9]*(-Kvect.at(18)*(dZ[4]+ 19372*hi[9]*K[0]/6561.0 + (-25360*hi[9]*K[1]/2187.0) + 64448*hi[9]*K[2]/6561.0 + (-212*hi[9]*K[3]/729.0))+(vm));
+//        K[5] = hi[9]*(-Kvect.at(18)*(dZ[4]+ 9017*hi[9]*K[0]/3168.0 + (-355*hi[9]*K[1]/33.0) + 46732*hi[9]*K[2]/5247.0 + (49*hi[9]*K[3]/176.0) + (-5103*hi[9]*K[4]/18656.0))+(vm));
+//        K[6] = hi[9]*(-Kvect.at(18)*(dZ[4]+ 35*hi[9]*K[0]/384.0 + 500*hi[9]*K[2]/1113.0 + (125*hi[9]*K[3]/192.0) + (-2187*hi[9]*K[4]/6784.0) + 11*hi[9]*K[5]/84.0)+(vm));
+
+//        dfsol   = dZ[4] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[4] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dfsol);
+//        s = pow(eps*hi[9]/(2*err),1/5);
+//        hopt[9] = s*hi[9];
+//        if( hopt[9] < hmin) hopt[9] = hmin;
+//        else if(hopt[9] > hmax) hopt[9] = hmax;
+
+//        // Решение dIpo через Дормана-Принса
+
+//        double Heavi5;
+//        double Heavi6;
+
+//        if( (dgp) >= 0){
+//             Heavi5 = 1;}
+//        if( (dgp) < 0){
+//             Heavi5 = 0;}
+
+//        if( (-dgp) >= 0){
+//             Heavi6 = 1;}
+//        if( (-dgp) < 0){
+//             Heavi6 = 0;}
+//        K[0] = hi[10]*(-Kvect.at(33)*dZ[2]+(dZ[12]+Kvect.at(3))*Heavi5+(dZ[12]+Kvect.at(3))*(Heavi6));
+//        K[1] = hi[10]*(-Kvect.at(33)*(dZ[2]+ hi[10]*K[0]/5.0)+((dZ[12]+ hi[10]/5.0)+Kvect.at(3))*Heavi5+((dZ[12]+ hi[10]/5.0)+Kvect.at(3))*(Heavi6));
+//        K[2] = hi[10]*(-Kvect.at(33)*(dZ[2]+ 3*hi[10]*K[0]/40.0 + 9*hi[10]*K[1]/40.0)+((dZ[12]+ 3*hi[10]/10.0)+Kvect.at(3))*Heavi5+((dZ[12]+ 3*hi[10]/10.0)+Kvect.at(3))*(Heavi6));
+//        K[3] = hi[10]*(-Kvect.at(33)*(dZ[2]+ 44*hi[10]*K[0]/45.0 + (-56*hi[10]*K[1]/15.0) + 32*hi[10]*K[2]/9.0)+((dZ[12]+ 4*hi[10]/5.0)+Kvect.at(3))*Heavi5+((dZ[12]+ 4*hi[10]/5.0)+Kvect.at(3))*(Heavi6));
+//        K[4] = hi[10]*(-Kvect.at(33)*(dZ[2]+ 19372*hi[10]*K[0]/6561.0 + (-25360*hi[10]*K[1]/2187.0) + 64448*hi[10]*K[2]/6561.0 + (-212*hi[10]*K[3]/729.0))+((dZ[12]+ 8*hi[10]/9.0)+Kvect.at(3))*Heavi5+((dZ[12]+ 8*hi[10]/9.0)+Kvect.at(3))*(Heavi6));
+//        K[5] = hi[10]*(-Kvect.at(33)*(dZ[2]+ 9017*hi[10]*K[0]/3168.0 + (-355*hi[10]*K[1]/33.0) + 46732*hi[10]*K[2]/5247.0 + (49*hi[10]*K[3]/176.0) + (-5103*hi[10]*K[4]/18656.0))+((dZ[12]+ hi[10])+Kvect.at(3))*Heavi5+((dZ[12]+ hi[10])+Kvect.at(3))*(Heavi6));
+//        K[6] = hi[10]*(-Kvect.at(33)*(dZ[2]+ 35*hi[10]*K[0]/384.0 + 500*hi[10]*K[2]/1113.0 + (125*hi[10]*K[3]/192.0) + (-2187*hi[10]*K[4]/6784.0) + 11*hi[10]*K[5]/84.0)+((dZ[12]+ hi[10])+Kvect.at(3))*Heavi5+((dZ[12]+ hi[10])+Kvect.at(3))*(Heavi6));
+
+//        dIpo   = dZ[2] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[2] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dIpo);
+//        s = pow(eps*hi[10]/(2*err),1/5);
+//        hopt[10] = s*hi[10];
+//        if( hopt[10] < hmin) hopt[10] = hmin;
+//        else if(hopt[10] > hmax) hopt[10] = hmax;
+
+//        // Решение dYt через Дормана-Принса
+
+//        double Heavi7;
+//        double Heavi8;
+
+//        if( (Kvect.at(35)*(dZ[0]/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//             Heavi7 = 1;}
+//        if( (Kvect.at(35)*(dZ[0]/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//             Heavi7 = 0;}
+
+//        if( (-Kvect.at(3)-Kvect.at(35)*(dZ[0]/Kvect.at(23)-Kvect.at(2))) >= 0){
+//             Heavi8 = 1;}
+//        if( (-Kvect.at(3)-Kvect.at(35)*(dZ[0]/Kvect.at(23)-Kvect.at(2))) < 0){
+//             Heavi8 = 0;}
+//        K[0] = hi[11]*(-Kvect.at(34)*(dZ[12]-Kvect.at(35)*(dZ[0]/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*dZ[12]-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//        if( (Kvect.at(35)*((dZ[0]+ hi[11]/5.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//             Heavi7 = 1;}
+//        if( (Kvect.at(35)*((dZ[0]+ hi[11]/5.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//             Heavi7 = 0;}
+
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ hi[11]/5.0)/Kvect.at(23)-Kvect.at(2))) >= 0){
+//             Heavi8 = 1;}
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ hi[11]/5.0)/Kvect.at(23)-Kvect.at(2))) < 0){
+//             Heavi8 = 0;}
+//        K[1] = hi[11]*(-Kvect.at(34)*((dZ[12]+ hi[11]*K[0]/5.0)-Kvect.at(35)*((dZ[0]+ hi[11]/5.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(dZ[12]+ hi[11]*K[0]/5.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//        if( (Kvect.at(35)*((dZ[0]+ 3*hi[11]/10.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//             Heavi7 = 1;}
+//        if( (Kvect.at(35)*((dZ[0]+ 3*hi[11]/10.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//             Heavi7 = 0;}
+
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ 3*hi[11]/10.0)/Kvect.at(23)-Kvect.at(2))) >= 0){
+//             Heavi8 = 1;}
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ 3*hi[11]/10.0)/Kvect.at(23)-Kvect.at(2))) < 0){
+//             Heavi8 = 0;}
+//        K[2] = hi[11]*(-Kvect.at(34)*((dZ[12]+ 3*hi[11]*K[0]/40.0 + 9*hi[11]*K[1]/40.0)-Kvect.at(35)*((dZ[0]+ 3*hi[11]/10.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(dZ[12]+ 3*hi[11]*K[0]/40.0 + 9*hi[11]*K[1]/40.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//        if( (Kvect.at(35)*((dZ[0]+ 4*hi[11]/5.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//             Heavi7 = 1;}
+//        if( (Kvect.at(35)*((dZ[0]+ 4*hi[11]/5.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//             Heavi7 = 0;}
+
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ 4*hi[11]/5.0)/Kvect.at(23)-Kvect.at(2))) >= 0){
+//             Heavi8 = 1;}
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ 4*hi[11]/5.0)/Kvect.at(23)-Kvect.at(2))) < 0){
+//             Heavi8 = 0;}
+//        K[3] = hi[11]*(-Kvect.at(34)*((dZ[12]+ 44*hi[11]*K[0]/45.0 + (-56*hi[11]*K[1]/15.0) + 32*hi[11]*K[2]/9.0)-Kvect.at(35)*((dZ[0]+ 4*hi[11]/5.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(dZ[12]+ 44*hi[11]*K[0]/45.0 + (-56*hi[11]*K[1]/15.0) + 32*hi[11]*K[2]/9.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//        if( (Kvect.at(35)*((dZ[0]+ 8*hi[11]/9.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//             Heavi7 = 1;}
+//        if( (Kvect.at(35)*((dZ[0]+ 8*hi[11]/9.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//             Heavi7 = 0;}
+
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ 8*hi[11]/9.0)/Kvect.at(23)-Kvect.at(2))) >= 0){
+//             Heavi8 = 1;}
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ 8*hi[11]/9.0)/Kvect.at(23)-Kvect.at(2))) < 0){
+//             Heavi8 = 0;}
+//        K[4] = hi[11]*(-Kvect.at(34)*((dZ[12]+ 19372*hi[11]*K[0]/6561.0 + (-25360*hi[11]*K[1]/2187.0) + 64448*hi[11]*K[2]/6561.0 + (-212*hi[11]*K[3]/729.0))-Kvect.at(35)*((dZ[0]+ 8*hi[11]/9.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(dZ[12]+ 19372*hi[11]*K[0]/6561.0 + (-25360*hi[11]*K[1]/2187.0) + 64448*hi[11]*K[2]/6561.0 + (-212*hi[11]*K[3]/729.0))-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//        if( (Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//             Heavi7 = 1;}
+//        if( (Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//             Heavi7 = 0;}
+
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2))) >= 0){
+//             Heavi8 = 1;}
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2))) < 0){
+//             Heavi8 = 0;}
+//        K[5] = hi[11]*(-Kvect.at(34)*((dZ[12]+ 9017*hi[11]*K[0]/3168.0 + (-355*hi[11]*K[1]/33.0) + 46732*hi[11]*K[2]/5247.0 + (49*hi[11]*K[3]/176.0) + (-5103*hi[11]*K[4]/18656.0))-Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(dZ[12]+ 9017*hi[11]*K[0]/3168.0 + (-355*hi[11]*K[1]/33.0) + 46732*hi[11]*K[2]/5247.0 + (49*hi[11]*K[3]/176.0) + (-5103*hi[11]*K[4]/18656.0))-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//        if( (Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//             Heavi7 = 1;}
+//        if( (Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//             Heavi7 = 0;}
+
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2))) >= 0){
+//             Heavi8 = 1;}
+//        if( (-Kvect.at(3)-Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2))) < 0){
+//             Heavi8 = 0;}
+//        K[6] = hi[11]*(-Kvect.at(34)*((dZ[12]+ 35*hi[11]*K[0]/384.0 + 500*hi[11]*K[2]/1113.0 + (125*hi[11]*K[3]/192.0) + (-2187*hi[11]*K[4]/6784.0) + 11*hi[11]*K[5]/84.0)-Kvect.at(35)*((dZ[0]+ hi[11])/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(dZ[12]+ 35*hi[11]*K[0]/384.0 + 500*hi[11]*K[2]/1113.0 + (125*hi[11]*K[3]/192.0) + (-2187*hi[11]*K[4]/6784.0) + 11*hi[11]*K[5]/84.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//        dYt   = dZ[12] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[12] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dYt);
+//        s = pow(eps*hi[11]/(2*err),1/5);
+//        hopt[11] = s*hi[11];
+//        if( hopt[11] < hmin) hopt[11] = hmin;
+//        else if(hopt[11] > hmax) hopt[11] = hmax;
+
+//        // Решение dIt через Дормана-Принса
+
+//        K[0] = hi[12]*(Kvect.at(8)*dZ[13]-Kvect.at(10)*dZ[10]);
+//        K[1] = hi[12]*(Kvect.at(8)*(dZ[13]+ hi[12]/5.0)-Kvect.at(10)*(dZ[10]+ hi[12]*K[0]/5.0));
+//        K[2] = hi[12]*(Kvect.at(8)*(dZ[13]+ 3*hi[12]/10.0)-Kvect.at(10)*(dZ[10]+ 3*hi[12]*K[0]/40.0 + 9*hi[12]*K[1]/40.0));
+//        K[3] = hi[12]*(Kvect.at(8)*(dZ[13]+ 4*hi[12]/5.0)-Kvect.at(10)*(dZ[10]+ 44*hi[12]*K[0]/45.0 + (-56*hi[12]*K[1]/15.0) + 32*hi[12]*K[2]/9.0));
+//        K[4] = hi[12]*(Kvect.at(8)*(dZ[13]+ 8*hi[12]/9.0)-Kvect.at(10)*(dZ[10]+ 19372*hi[12]*K[0]/6561.0 + (-25360*hi[12]*K[1]/2187.0) + 64448*hi[12]*K[2]/6561.0 + (-212*hi[12]*K[3]/729.0)));
+//        K[5] = hi[12]*(Kvect.at(8)*(dZ[13]+ hi[12])-Kvect.at(10)*(dZ[10]+ 9017*hi[12]*K[0]/3168.0 + (-355*hi[12]*K[1]/33.0) + 46732*hi[12]*K[2]/5247.0 + (49*hi[12]*K[3]/176.0) + (-5103*hi[12]*K[4]/18656.0)));
+//        K[6] = hi[12]*(Kvect.at(8)*(dZ[13]+ hi[12])-Kvect.at(10)*(dZ[10]+ 35*hi[12]*K[0]/384.0 + 500*hi[12]*K[2]/1113.0 + (125*hi[12]*K[3]/192.0) + (-2187*hi[12]*K[4]/6784.0) + 11*hi[12]*K[5]/84.0));
+
+//        dIt   = dZ[10] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[10] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dIt);
+//        s = pow(eps*hi[12]/(2*err),1/5);
+//        hopt[12] = s*hi[12];
+//        if( hopt[12] < hmin) hopt[12] = hmin;
+//        else if(hopt[12] > hmax) hopt[12] = hmax;
+
+//        // Решение dIi через Дормана-Принса
+
+//        K[0] = hi[13]*(-Kvect.at(8)*dZ[13]+vbas+vbol);
+//        K[1] = hi[13]*(-Kvect.at(8)*(dZ[13]+ hi[13]*K[0]/5.0)+vbas+vbol);
+//        K[2] = hi[13]*(-Kvect.at(8)*(dZ[13]+ 3*hi[13]*K[0]/40.0 + 9*hi[13]*K[1]/40.0)+(vbas)+vbol);
+//        K[3] = hi[13]*(-Kvect.at(8)*(dZ[13]+ 44*hi[13]*K[0]/45.0 + (-56*hi[13]*K[1]/15.0) + 32*hi[13]*K[2]/9.0)+(vbas)+vbol);
+//        K[4] = hi[13]*(-Kvect.at(8)*(dZ[13]+ 19372*hi[13]*K[0]/6561.0 + (-25360*hi[13]*K[1]/2187.0) + 64448*hi[13]*K[2]/6561.0 + (-212*hi[13]*K[3]/729.0))+(vbas)+(vbol));
+//        K[5] = hi[13]*(-Kvect.at(8)*(dZ[13]+ 9017*hi[13]*K[0]/3168.0 + (-355*hi[13]*K[1]/33.0) + 46732*hi[13]*K[2]/5247.0 + (49*hi[13]*K[3]/176.0) + (-5103*hi[13]*K[4]/18656.0))+(vbas)+(vbol));
+//        K[6] = hi[13]*(-Kvect.at(8)*(dZ[13]+ 35*hi[13]*K[0]/384.0 + 500*hi[13]*K[2]/1113.0 + (125*hi[13]*K[3]/192.0) + (-2187*hi[13]*K[4]/6784.0) + 11*hi[13]*K[5]/84.0)+(vbas)+(vbol));
+
+//        dIi   = dZ[13] + (35*K[0]/384.0 + 500*K[2]/1113.0 + 125*K[3]/192.0 - 2187*K[4]/6784.0 + 11*K[5]/84.0);            // во многих источниках домножается на h, но в одном нету такого.
+//        dz = dZ[13] + (5179*K[0]/57600.0 + 7571*K[2]/16695.0 + 393*K[3]/640.0 - 92097*K[4]/339200.0 + 187*K[5]/2100.0 + K[6]/40.0);
+//        err = abs(dz-dIi);
+//        s = pow(eps*hi[13]/(2*err),1/5);
+//        hopt[13] = s*hi[13];
+//        if( hopt[13] < hmin) hopt[13] = hmin;
+//        else if(hopt[13] > hmax) hopt[13] = hmax;
+
+//        dZ[0] = dgp;
+//        dZ[1] = dId;
+//        dZ[2] = dIpo;
+//        dZ[3] = dfgut;
+//        dZ[4] = dfsol;
+//        dZ[5] = dfliq;
+//        dZ[6] = dgt;
+//        dZ[7] = dXt;
+//        dZ[8] = dI1;
+//        dZ[9] = dIp;
+//        dZ[10] = dIt;
+//        dZ[11] = dIl;
+//        dZ[12] = dYt;
+//        dZ[13] = dIi;
+
+//        tick.append(t);
+//        CGB.append(dZ[0]/Kvect.at(23));
+//        Ipg.append(dZ[9]*20);
+
+//        hi[0] = hopt[0];
+//        hi[1] = hopt[1];
+//        hi[2] = hopt[2];
+//        hi[3] = hopt[3];
+//        hi[4] = hopt[4];
+//        hi[5] = hopt[5];
+//        hi[6] = hopt[6];
+//        hi[7] = hopt[7];
+//        hi[8] = hopt[8];
+//        hi[9] = hopt[9];
+//        hi[10] = hopt[10];
+//        hi[11] = hopt[11];
+//        hi[12] = hopt[12];
+//        hi[13] = hopt[13];
+
+//        t = t + h; // увеличиваем время
+//        j = j + h;
+//    }
+//    //return;
+}
+void MainWindow::RungeKutta()
+{
+//double  a = i*5 - 5;    // промедуток 5 минут
+//double  b = i*5;        // конечное время
+
+//double eps=0.000001; //error allowance in one step calculation.
+//double hmin = 0.01;
+//double hmax = 1;
+
+//double h = 0.25;
+
+//double OB = 6.63;//(m2/19) *1.5;      // result of bolus calculation Потом переместить в Глобальный цикл
+
+//double K[4];
+//double dz;
+//double err;
+//double s;
+
+//double del = 0.4;       // result of bolus calculation +
+//double m2 = 90;         // + М ?
+
+//double Dig = 1176*m2+1; // вместо m2 массу углеводов
+//double Dbol1=del*OB;
+//double Dbol2=(1-del)*OB;
+//double Dbol3=0;
+
+//for (double j = a; j <= b;)
+
+//{
+//        /* bolus */
+//    double Ti1 = 10;
+//    double Ti2 = 10;
+//    double ti2 = 60;
+//    double ti1 = 30;
+//    double Ti3 = 10;
+//    double ti3 = 10;
+//    double tm1 = 60; // tm  // время приёма пищи
+//    double Tm = 20;         // длительность приёма пищи
+
+//    // выходные значения dZout
+//    double dgp;
+//    double dgt;
+//    double dI1;
+//    double dXt;
+//    double dIl;
+//    double dIp;
+//    double dfgut;
+//    double dfliq;
+//    double dfsol;
+//    double dIpo;
+//    double dYt;
+//    double dIt;
+//    double dIi;
+//    double dId;
+
+//    // Fluctuations
+//    double vbas=Vbas*100;      // pmol/min
+//    double bol1=1/Ti1*Dbol1*(1./(1+exp(-3*(t+10-ti1))))*(1./(1+exp(-3*(-10+ti1-t+Ti1))));
+//    double bol2=1/Ti2*Dbol2*(1./(1+exp(-3*(t+10-ti2))))*(1./(1+exp(-3*(-10+ti2-t+Ti2))));
+//    double bol3=1/Ti3*Dbol3*(1./(1+exp(-3*(t+10-ti3))))*(1./(1+exp(-3*(-10+ti3-t+Ti3))));
+
+//    double vbol=6000*(bol1+bol2+bol3);
+
+//    double vm=Dig/Tm*(1./(1+exp(-3*(t-tm1))))*(1./(1+exp(-3*(-(t-tm1-Tm)))));
+
+//    /* ДУ */
+
+//    // Решаем dgp через Рунге-Кутта
+//    //dgp=EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt; // plasma glucose mg/dl
+//    // dgp = f(fgut,gt,Id,Ipo,fgut,gp)
+
+//            double Heavi1;
+//            if( (gp-Kvect.at(32))>= 0){
+//                 Heavi1 = 1;}
+//            if( (gp-Kvect.at(32)) < 0){
+//                 Heavi1 = 0;}
+
+//            double Heavi3;
+//            if( (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)  >= 0){
+//                 Heavi3 = 1;}
+//            if( (Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo) < 0){
+//                 Heavi3 = 0;}
+
+//            double EGP;
+//            EGP=(Kvect.at(11)-Kvect.at(12)*gp-Kvect.at(13)*Id-Kvect.at(14)*Ipo)*Heavi3;
+
+//            K[0] = h*(EGP+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*fgut-Kvect.at(26)-Kvect.at(31)*(gp-Kvect.at(32))*Heavi1-Kvect.at(24)*gp+Kvect.at(25)*gt);
+
+//            if( ((gp+ h*K[0]/2.0)-Kvect.at(32))>= 0){
+//                 Heavi1 = 1;}
+//            if( ((gp+ h*K[0]/2.0)-Kvect.at(32)) < 0){
+//                 Heavi1 = 0;}
+//            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))  >= 0){
+//                 Heavi3 = 1;}
+//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
+//                 Heavi3 = 0;}*/
+//            K[1] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[0]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[0]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[0]/2.0)+Kvect.at(25)*(gt+ h/2.0));
+
+//            if( ((gp+ h*K[1]/2.0)-Kvect.at(32))>= 0){
+//                 Heavi1 = 1;}
+//            if( ((gp+ h*K[1]/2.0)-Kvect.at(32)) < 0){
+//                 Heavi1 = 0;}
+//            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))  >= 0){
+//                 Heavi3 = 1;}
+//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0)) < 0){
+//                 Heavi3 = 0;}*/
+//            K[2] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[1]/2.0)-Kvect.at(13)*(Id+ h/2.0)-Kvect.at(14)*(Ipo+ h/2.0))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h/2.0)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[1]/2.0)-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[1]/2.0)+Kvect.at(25)*(gt+ h/2.0));
+
+//            if( ((gp+ h*K[2])-Kvect.at(32))>= 0){
+//                 Heavi1 = 1;}
+//            if( ((gp+ h*K[2])-Kvect.at(32)) < 0){
+//                 Heavi1 = 0;}
+//            /*if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))  >= 0){
+//                 Heavi3 = 1;}
+//            if( (Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h)) < 0){
+//                 Heavi3 = 0;}*/
+//            K[3] = h*((Kvect.at(11)-Kvect.at(12)*(gp+ h*K[2])-Kvect.at(13)*(Id+ h)-Kvect.at(14)*(Ipo+ h))*Heavi3+Kvect.at(16)/Kvect.at(0)*Kvect.at(17)*(fgut+ h)-Kvect.at(26)-Kvect.at(31)*((gp+ h*K[2])-Kvect.at(32))*Heavi1-Kvect.at(24)*(gp+ h*K[2])+Kvect.at(25)*(gt+ h));
+
+//            dgp   = gp + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dgt через Рунге-Кутта
+
+//            // dgt=-((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt;
+//            // dgt = f(Xt,gp,gt)
+
+//            K[0] = h*(-((Kvect.at(27)+Kvect.at(28)*Xt)*gt)/(Kvect.at(29)+gt)+Kvect.at(24)*gp-Kvect.at(25)*gt);
+//            K[1] = h*(-((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[0]/2.0))/(Kvect.at(29)+(gt + h*K[0]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[0]/2.0));
+//            K[2] = h*(-((Kvect.at(27)+Kvect.at(28)*(Xt + h/2.0))*(gt + h*K[1]/2.0))/(Kvect.at(29)+(gt + h*K[1]/2.0))+Kvect.at(24)*(gp + h/2.0)-Kvect.at(25)*(gt + h*K[1]/2.0));
+//            K[3] = h*(-((Kvect.at(27)+Kvect.at(28)*(Xt + h))*(gt + h*K[2]))/(Kvect.at(29)+(gt + h*K[2]))+Kvect.at(24)*(gp + h)-Kvect.at(25)*(gt + h*K[2]));
+//            dgt   = gt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dI1 через Рунге-Кутта
+
+//            // dI1=-Kvect.at(15)*(I1-Ip/Kvect.at(4));
+//            // dI1 = f(Ip,I1)
+
+//            K[0] = h*(-Kvect.at(15)*(I1-Ip/Kvect.at(4)));
+//            K[1] = h*(-Kvect.at(15)*((I1 + h*K[0]/2.0)-(Ip+ h/2.0)/Kvect.at(4)));
+//            K[2] = h*(-Kvect.at(15)*((I1 + h*K[1]/2.0)-(Ip+ h/2.0)/Kvect.at(4)));
+//            K[3] = h*(-Kvect.at(15)*((I1 + h*K[2])-(Ip+ h)/Kvect.at(4)));
+//            dI1   = I1 + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dId через Рунге-Кутта
+//            // dId=-Kvect.at(15)*(Id-I1);
+//            // dId = f(I1,Id)?
+//            K[0] = h*(-Kvect.at(15)*(Id-I1));
+//            K[1] = h*(-Kvect.at(15)*((Id + h*K[0]/2.0)-(I1+h/2.0)));
+//            K[2] = h*(-Kvect.at(15)*((Id + h*K[1]/2.0)-(I1+h/2.0)));
+//            K[3] = h*(-Kvect.at(15)*((Id + h*K[2])-(I1+h)));
+//            dId   = Id + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dXt через Рунге-Кутта
+//            // dXt=-Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2;
+//            // dXt = f(Ip,Xt)?
+//            double Heavi2;
+//            if( ((Ip/Kvect.at(4))-Kvect.at(1)) >= 0){
+//                 Heavi2 = 1;}
+//            if( ((Ip/Kvect.at(4))-Kvect.at(1)) < 0){
+//                 Heavi2 = 0;}
+//            K[0] = h*(-Kvect.at(30)*Xt+Kvect.at(30)*((Ip/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//            if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
+//                 Heavi2 = 1;}
+//            if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) < 0){
+//                 Heavi2 = 0;}
+//            K[1] = h*(-Kvect.at(30)*(Xt+ h*K[0]/2.0)+Kvect.at(30)*(((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//            if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) >= 0){
+//                 Heavi2 = 1;}
+//            if( (((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1)) < 0){
+//                 Heavi2 = 0;}
+//            K[2] = h*(-Kvect.at(30)*(Xt + h*K[1]/2.0)+Kvect.at(30)*(((Ip+ h/2.0)/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//            if( (((Ip+ h)/Kvect.at(4))-Kvect.at(1)) >= 0){
+//                 Heavi2 = 1;}
+//            if( (((Ip+ h)/Kvect.at(4))-Kvect.at(1)) < 0){
+//                 Heavi2 = 0;}
+//            K[3] = h*(-Kvect.at(30)*(Xt+ h*K[2])+Kvect.at(30)*(((Ip+ h)/Kvect.at(4))-Kvect.at(1))*Heavi2);
+
+//            dXt   = Xt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dIl через Рунге-Кутта
+//            // dIl=-(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip;
+//            // dIl = f(Ip,Il)?
+
+//            K[0] = h*(-(Kvect.at(5)+Kvect.at(7))*Il+Kvect.at(6)*Ip);
+//            K[1] = h*(-(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[0]/2.0)+Kvect.at(6)*(Ip+ h/2.0));
+//            K[2] = h*(-(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[1]/2.0)+Kvect.at(6)*(Ip+ h/2.0));
+//            K[3] = h*(-(Kvect.at(5)+Kvect.at(7))*(Il+ h*K[2])+Kvect.at(6)*(Ip+ h));
+
+//            dIl   = Il + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dIp через Рунге-Кутта
+//            // dIp=-Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip;
+//            // dIp = f(Il,It,Ip)?
+//            K[0] = h*(-Kvect.at(6)*Ip+Kvect.at(5)*Il+Kvect.at(10)/Kvect.at(0)*It-Kvect.at(9)*Ip);
+//            K[1] = h*(-Kvect.at(6)*(Ip+ h*K[0]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[0]/2.0));
+//            K[2] = h*(-Kvect.at(6)*(Ip+ h*K[1]/2.0)+Kvect.at(5)*(Il+ h/2.0)+Kvect.at(10)/Kvect.at(0)*(It+ h/2.0)-Kvect.at(9)*(Ip+ h*K[1]/2.0));
+//            K[3] = h*(-Kvect.at(6)*(Ip+ h*K[2])+Kvect.at(5)*(Il+ h)+Kvect.at(10)/Kvect.at(0)*(It+ h)-Kvect.at(9)*(Ip+ h*K[2]));
+
+//            dIp   = Ip + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dfgut через Рунге-Кутта
+//            // dfgut=-Kvect.at(17)*fgut+kgut*fliq;
+//            // dfgut = f(fliq,fsol,fgut)?
+
+//                        double kgut;
+//                        kgut=Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2);
+
+//            K[0] = h*(-Kvect.at(17)*fgut+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2)*fliq);
+//            K[1] = h*(-Kvect.at(17)*(fgut+ h*K[0]/2.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(22)*Dig))+2)*(fliq+ h/2.0));
+//            K[2] = h*(-Kvect.at(17)*(fgut+ h*K[1]/2.0)+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h/2.0)-Kvect.at(22)*Dig))+2)*(fliq+ h/2.0));
+//            K[3] = h*(-Kvect.at(17)*(fgut+ h*K[2])+Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h)+(fliq+ h)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h)+(fliq+ h)-Kvect.at(22)*Dig))+2)*(fliq+ h));
+
+//            dfgut   = fgut + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dfliq через Рунге-Кутта
+//            // dfliq=-kgut*fliq+Kvect.at(18)*fsol;
+//            // dfliq = f(fliq,fsol)?
+
+//            K[0] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*(fsol+fliq-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*(fsol+fliq-Kvect.at(22)*Dig))+2))*fliq+Kvect.at(18)*fsol);
+//            K[1] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[0]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[0]/2.0)+Kvect.at(18)*(fsol+ h/2.0));
+//            K[2] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h/2.0)+(fliq+ h*K[1]/2.0)-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h/2.0)+(fliq+ h*K[1]/2.0)-Kvect.at(22)*Dig))+2))*(fliq+ h*K[1]/2.0)+Kvect.at(18)*(fsol+ h/2.0));
+//            K[2] = h*(-(Kvect.at(19)+(Kvect.at(20)-Kvect.at(19))/2*(tanh((5/(2*Dig*(1-Kvect.at(21))))*((fsol+ h)+(fliq+ h*K[2])-Kvect.at(21)*Dig))-tanh((5/(2*Dig*Kvect.at(22)))*((fsol+ h)+(fliq+ h*K[2])-Kvect.at(22)*Dig))+2))*(fliq+ h*K[2])+Kvect.at(18)*(fsol+ h));
+
+//            dfliq   = fliq + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dfsol через Рунге-Кутта
+//            // dfsol=-Kvect.at(18)*fsol+vm;
+//            // dfsol = f(fsol,vm)?
+
+//            K[0] = h*(-Kvect.at(18)*fsol+vm);
+//            K[1] = h*(-Kvect.at(18)*(fsol+ h*K[0]/2.0)+(vm+ h/2.0));
+//            K[2] = h*(-Kvect.at(18)*(fsol+ h*K[1]/2.0)+(vm+ h/2.0));
+//            K[3] = h*(-Kvect.at(18)*(fsol+ h*K[2])+(vm+ h));
+
+//            dfsol   = fsol + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dIpo через Рунге-Кутта
+//            // dIpo=-Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6);
+//            // dIpo = f(Yt,dgp,Ipo)?
+//            double Heavi5;
+//            double Heavi6;
+
+//            if( (dgp) >= 0){
+//                 Heavi5 = 1;}
+//            if( (dgp) < 0){
+//                 Heavi5 = 0;}
+
+//            if( (-dgp) >= 0){
+//                 Heavi6 = 1;}
+//            if( (-dgp) < 0){
+//                 Heavi6 = 0;}
+//            K[0] = h*(-Kvect.at(33)*Ipo+(Yt+Kvect.at(3))*Heavi5+(Yt+Kvect.at(3))*(Heavi6));
+
+//            /*if( ((dgp+ h/2.0)) >= 0){
+//                 Heavi5 = 1;}
+//            if( ((dgp+ h/2.0)) < 0){
+//                 Heavi5 = 0;}
+
+//            if( (-(dgp+ h/2.0)) >= 0){
+//                 Heavi6 = 1;}
+//            if( (-(dgp+ h/2.0)) < 0){
+//                 Heavi6 = 0;}*/
+//            K[1] = h*(-Kvect.at(33)*(Ipo+ h*K[0]/2.0)+((Yt+ h/2.0)+Kvect.at(3))*Heavi5+((Yt+ h/2.0)+Kvect.at(3))*(Heavi6));
+
+//            /*if( ((dgp+ h/2.0)) >= 0){
+//                 Heavi5 = 1;}
+//            if( ((dgp+ h/2.0)) < 0){
+//                 Heavi5 = 0;}
+
+//            if( (-(dgp+ h/2.0)) >= 0){
+//                 Heavi6 = 1;}
+//            if( (-(dgp+ h/2.0)) < 0){
+//                 Heavi6 = 0;}*/
+//            K[2] = h*(-Kvect.at(33)*(Ipo+ h*K[1]/2.0)+((Yt+ h/2.0)+Kvect.at(3))*Heavi5+((Yt+ h/2.0)+Kvect.at(3))*(Heavi6));
+
+//            /*if( ((dgp+ h)) >= 0){
+//                 Heavi5 = 1;}
+//            if( ((dgp+ h)) < 0){
+//                 Heavi5 = 0;}
+
+//            if( (-(dgp+ h)) >= 0){
+//                 Heavi6 = 1;}
+//            if( (-(dgp+ h)) < 0){
+//                 Heavi6 = 0;}*/
+//            K[3] = h*(-Kvect.at(33)*(Ipo+ h*K[2])+((Yt+ h)+Kvect.at(3))*Heavi5+((Yt+ h)+Kvect.at(3))*(Heavi6));
+
+//            dIpo   = Ipo + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dYt через Рунге-Кутта
+//            // dYt=-Kvect.at(34)*(Yt-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*Yt-Kvect.at(34)*Kvect.at(3))*(Heavi8);
+//            // dYt = f(gp,Yt)?
+//            double Heavi7;
+//            double Heavi8;
+
+//            if( (Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//                 Heavi7 = 1;}
+//            if( (Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//                 Heavi7 = 0;}
+
+//            if( (-Kvect.at(3)-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))) >= 0){
+//                 Heavi8 = 1;}
+//            if( (-Kvect.at(3)-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2))) < 0){
+//                 Heavi8 = 0;}
+//            K[0] = h*(-Kvect.at(34)*(Yt-Kvect.at(35)*(gp/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*Yt-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//            if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//                 Heavi7 = 1;}
+//            if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//                 Heavi7 = 0;}
+
+//            if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) >= 0){
+//                 Heavi8 = 1;}
+//            if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) < 0){
+//                 Heavi8 = 0;}
+//            K[1] = h*(-Kvect.at(34)*((Yt+ h*K[0]/2.0)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[0]/2.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//            if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//                 Heavi7 = 1;}
+//            if( (Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//                 Heavi7 = 0;}
+
+//            if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) >= 0){
+//                 Heavi8 = 1;}
+//            if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2))) < 0){
+//                 Heavi8 = 0;}
+//            K[2] = h*(-Kvect.at(34)*((Yt+ h*K[1]/2.0)-Kvect.at(35)*((gp+ h/2.0)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[1]/2.0)-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//            if( (Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) >= 0){
+//                 Heavi7 = 1;}
+//            if( (Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))+Kvect.at(3)) < 0){
+//                 Heavi7 = 0;}
+
+//            if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))) >= 0){
+//                 Heavi8 = 1;}
+//            if( (-Kvect.at(3)-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2))) < 0){
+//                 Heavi8 = 0;}
+//            K[3] = h*(-Kvect.at(34)*((Yt+ h*K[2])-Kvect.at(35)*((gp+ h)/Kvect.at(23)-Kvect.at(2)))*Heavi7+(-Kvect.at(34)*(Yt+ h*K[2])-Kvect.at(34)*Kvect.at(3))*(Heavi8));
+
+//            dYt   = Yt + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dIt через Рунге-Кутта
+//            // dIt=Kvect.at(8)*Ii-Kvect.at(10)*It;
+//            // dIt = f(Ii,It)?
+//            K[0] = h*(Kvect.at(8)*Ii-Kvect.at(10)*It);
+//            K[1] = h*(Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[0]/2.0));
+//            K[2] = h*(Kvect.at(8)*(Ii+ h/2.0)-Kvect.at(10)*(It+ h*K[1]/2.0));
+//            K[3] = h*(Kvect.at(8)*(Ii+ h)-Kvect.at(10)*(It+ h*K[2]));
+
+//            dIt   = It + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            // Решаем dIi через Рунге-Кутта
+//            // dIi=-Kvect.at(8)*Ii+vbas+vbol;
+//            // dIi = f(vbol,Ii,vbas)?
+//            K[0] = h*(-Kvect.at(8)*Ii+vbas+vbol);
+//            K[1] = h*(-Kvect.at(8)*(Ii+ h*K[0]/2.0)+(vbas+ h/2.0)+(vbol+ h/2.0));
+//            K[2] = h*(-Kvect.at(8)*(Ii+ h*K[1]/2.0)+(vbas+ h/2.0)+(vbol+ h/2.0));
+//            K[3] = h*(-Kvect.at(8)*(Ii+ h*K[2])+(vbas+ h)+(vbol+ h));
+
+//            dIi   = Ii + (K[0] + 2.0*K[1] + 2.0*K[2] + K[3])/6.0;
+
+//            dZ[0] = dgp;
+//            dZ[1] = dId;
+//            dZ[2] = dIpo;
+//            dZ[3] = dfgut;
+//            dZ[4] = dfsol;
+//            dZ[5] = dfliq;
+//            dZ[6] = dgt;
+//            dZ[7] = dXt;
+//            dZ[8] = dI1;
+//            dZ[9] = dIp;
+//            dZ[10] = dIt;
+//            dZ[11] = dIl;
+//            dZ[12] = dYt;
+//            dZ[13] = dIi;
+
+//            tick.append(t);
+//            CGB.append(dZ[0]/Kvect.at(23));
+//            Ipg.append(dZ[9]*20);
+
+//            hi[0] = hopt[0];
+//            hi[1] = hopt[1];
+//            hi[2] = hopt[2];
+//            hi[3] = hopt[3];
+//            hi[4] = hopt[4];
+//            hi[5] = hopt[5];
+//            hi[6] = hopt[6];
+//            hi[7] = hopt[7];
+//            hi[8] = hopt[8];
+//            hi[9] = hopt[9];
+//            hi[10] = hopt[10];
+//            hi[11] = hopt[11];
+//            hi[12] = hopt[12];
+//            hi[13] = hopt[13];
+
+//            t = t + h; // увеличиваем время
+//            j = j + h;
+//        }
 }
