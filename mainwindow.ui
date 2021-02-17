@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1555</width>
-    <height>631</height>
+    <height>1033</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,24 +27,24 @@
    <widget class="QCustomPlot" name="matCustomPlot" native="true">
     <property name="geometry">
      <rect>
-      <x>780</x>
-      <y>30</y>
+      <x>770</x>
+      <y>540</y>
       <width>731</width>
-      <height>491</height>
+      <height>441</height>
      </rect>
     </property>
    </widget>
    <widget class="QLabel" name="label">
     <property name="geometry">
      <rect>
-      <x>790</x>
-      <y>10</y>
-      <width>55</width>
-      <height>16</height>
+      <x>684</x>
+      <y>540</y>
+      <width>81</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="text">
-     <string>Matlab</string>
+     <string>Matlab ode45</string>
     </property>
    </widget>
    <widget class="QLabel" name="label_2">
@@ -52,12 +52,35 @@
      <rect>
       <x>30</x>
       <y>10</y>
-      <width>55</width>
+      <width>121</width>
       <height>16</height>
      </rect>
     </property>
     <property name="text">
-     <string>Qt</string>
+     <string>Qt Runge-Kutta</string>
+    </property>
+   </widget>
+   <widget class="QCustomPlot" name="dpCustomPlot" native="true">
+    <property name="geometry">
+     <rect>
+      <x>770</x>
+      <y>30</y>
+      <width>731</width>
+      <height>491</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>770</x>
+      <y>10</y>
+      <width>121</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Qt Dorman-Prince</string>
     </property>
    </widget>
   </widget>

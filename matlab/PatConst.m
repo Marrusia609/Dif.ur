@@ -37,3 +37,4 @@ k(36)=0.11; % pmol/kg per (mg/dl) +
 k(37)=1/19; % Patient OB U/(mg/dl) ?
 
 save('PatConst.mat','k')
+csvwrite('PatConst.csv',k);

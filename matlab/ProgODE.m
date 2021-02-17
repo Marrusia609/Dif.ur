@@ -1,6 +1,6 @@
-function dZ = odeDM(t,Z) 
+function dZ = odeDM(t,Z)
 
-global Vbas tm Tm Dbol Ti ti k M
+global Vbas tm Tm Dbol Ti ti k M ttt
 
 dZ=zeros(14,1);
 gp=Z(1); Il=Z(2); Ip=Z(3); fgut=Z(4); fliq=Z(5); fsol=Z(6); gt=Z(7); 
@@ -15,7 +15,8 @@ bol3=1/Ti(3)*Dbol(3)*(1./(1+exp(-3*(t+10-ti(3))))).*(1./(1+exp(-3*(-10+ti(3)-t+T
 vbol=6000*(bol1+bol2+bol3);
 %% Meal
 Dig=1176*M+1;
-vm=Dig/Tm*heaviside(t-tm)*heaviside(-(t-tm-Tm));
+%vm=Dig/Tm*heaviside(t-tm)*heaviside(-(t-tm-Tm));
+vm=Dig/Tm*(1./(1+exp(-3*(t-tm)))).*(1./(1+exp(-3*(-(t-tm-Tm)))));
 
 %% ODE
 EGP=(k(12)-k(13)*gp-k(14)*Id-k(15)*Ipo)*heaviside(k(12)-k(13)*gp-k(14)*Id-k(15)*Ipo);
@@ -36,6 +37,7 @@ dYt=-k(35)*(Yt-k(36)*(gp/k(24)-k(3)))*heaviside(k(36)*(gp/k(24)-k(3))+k(4))+(-k(
 dIt=k(9)*Ii-k(11)*It;
 dIi=-k(9)*Ii+vbas+vbol;
 
-dZ=[dgp dIl dIp dfgut dfliq dfsol dgt dI1 dId dXt dIpo dYt dIi dIt]';
+dZ=[dgp dIl1 dIp dfgut dfliq dfsol dgt dI1 dId dXt dIpo dYt dIi dIt]';
 
+ttt = [ttt; t];
 end

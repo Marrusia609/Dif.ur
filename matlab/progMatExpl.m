@@ -5,7 +5,7 @@ close all
 
 load('PatConst.mat')
 
-global Vbas tm Tm Dbol Ti ti k bas M
+global Vbas tm Tm Dbol Ti ti k bas M ttt
 
 %% Input model parameters
 Ginit=122.00;       % +
@@ -80,5 +80,8 @@ Ipr=[IP(2:end) ; IP(end,1)*20];
 plot(1:720,Gpr,'g');
 plot(1:720,IP,'b');
 grid on
+
+figure
+plot(ttt)
 csvwrite('progMatExplDate1.csv',GG);
 csvwrite('progMatExplDate2.csv',IP);
